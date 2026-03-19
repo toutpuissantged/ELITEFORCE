@@ -1,0 +1,52 @@
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setToken, setUser, setLoading } from '../store/authSlice';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
+import axios from 'axios';
+
+import AuthStack from './AuthStack';
+import MainStack from './MainStack';
+
+export default function AppNavigator() {
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+
+  const API_URL = process.env.API_URL || 'http://localhost:3000';
+
+  useEffect(() => {
+    const bootstrapAsync = async () => {
+      dispatch(setLoading(true));
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          // Verify token and fetch user details
+          const response = await axios.get(`${API_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          dispatch(setUser(response.data.user));
+          dispatch(setToken(token));
+        }
+      } catch (e) {
+        // Token invalid or expired
+        console.log('Error restoring token:', e);
+        await AsyncStorage.removeItem('token');
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+
+    bootstrapAsync();
+  }, [dispatch, API_URL]);
+
+  if (loading) {
+    // We could render a splash screen here
+    return null;
+  }
+
+  return (
+    <NavigationContainer>
+      {isAuthenticated ? <MainStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
+}
