@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { sendPushNotification } = require('../services/notificationService');
 
 const createBooking = async (req, res, next) => {
   try {
@@ -128,17 +127,6 @@ const updateBookingStatus = async (req, res, next) => {
       data: { status },
       include: { user: true, service: true }
     });
-
-    // Handle notifications
-    if (booking.user.pushToken) {
-      if (status === 'CONFIRMED') {
-        await sendPushNotification(booking.user.pushToken, 'Réservation confirmée', 'Votre réservation est confirmée !', { bookingId: booking.id });
-      } else if (status === 'IN_PROGRESS') {
-        await sendPushNotification(booking.user.pushToken, 'Prestataire en route', 'Votre prestataire arrive dans 10 min', { bookingId: booking.id });
-      } else if (status === 'COMPLETED') {
-        await sendPushNotification(booking.user.pushToken, 'Mission terminée', 'Mission terminée - Notez votre prestataire', { bookingId: booking.id });
-      }
-    }
 
     res.json(booking);
   } catch (error) {

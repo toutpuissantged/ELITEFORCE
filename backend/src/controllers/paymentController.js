@@ -74,13 +74,6 @@ const handleWebhook = async (req, res, next) => {
       });
       console.log(`Booking with PaymentIntent ${paymentIntent.id} confirmed.`);
 
-      // Import the notification service to send a push notification
-      const { sendPushNotification } = require('../services/notificationService');
-      const user = await prisma.user.findUnique({ where: { id: updatedBooking.userId } });
-      if (user && user.pushToken) {
-         sendPushNotification(user.pushToken, 'Réservation confirmée', 'Votre prestataire sera là le ...', { bookingId: updatedBooking.id });
-      }
-
     } catch (updateError) {
       console.error(`Error updating booking: ${updateError.message}`);
     }

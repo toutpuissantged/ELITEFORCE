@@ -95,22 +95,6 @@ const getMe = async (req, res, next) => {
   }
 };
 
-const updatePushToken = async (req, res, next) => {
-  try {
-    const { pushToken } = req.body;
-    const userId = req.user.id;
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { pushToken }
-    });
-
-    res.json({ message: 'Push token updated successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const logout = async (req, res, next) => {
   try {
     // For JWT, actual logout is usually handled client-side by deleting the token.
@@ -125,6 +109,5 @@ module.exports = {
   register,
   login,
   getMe,
-  updatePushToken,
   logout,
 };

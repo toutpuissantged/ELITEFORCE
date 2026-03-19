@@ -16,7 +16,6 @@ model User {
   firstName String
   lastName  String
   phone     String?
-  pushToken String?
   role      Role      @default(CLIENT)
   createdAt DateTime  @default(now())
   bookings  Booking[]
