@@ -161,7 +161,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         <Text style={styles.subtitle}>Fill in your details to get started</Text>
                     </View>
 
-                    <View style={styles.form}>
+                    <View style={styles.formContainer}>
                         {error && (
                             <View style={styles.errorBanner}>
                                 <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.colors.error} />
@@ -230,17 +230,16 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
         paddingBottom: theme.spacing.xl,
+        backgroundColor: theme.colors.background,
     },
     backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
     },
     header: {
         marginTop: 20,
@@ -256,12 +255,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: theme.colors.text.muted,
     },
-    form: {
-        backgroundColor: '#fff',
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+    formContainer: {
+        width: '100%',
     },
     row: {
         flexDirection: 'row',
@@ -286,12 +281,12 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#fff',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
         paddingHorizontal: 16,
-        height: 56,
+        height: 60,
     },
     inputIcon: {
         marginRight: 10,

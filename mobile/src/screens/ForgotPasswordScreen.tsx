@@ -63,7 +63,7 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                         <Text style={styles.subtitle}>Enter your email address and we'll send you a link to reset your password.</Text>
                     </View>
 
-                    <View style={styles.form}>
+                    <View style={styles.formContainer}>
                         <View style={styles.inputContainer}>
                             <Text style={styles.inputLabel}>Email Address</Text>
                             <View style={styles.inputWrapper}>
@@ -116,31 +116,27 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.lg,
     },
     backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
     },
     header: {
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginTop: 40,
         marginBottom: 40,
     },
     iconContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 64,
+        height: 64,
+        borderRadius: 16,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
     },
     title: {
         fontSize: 28,
@@ -151,15 +147,10 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 16,
         color: theme.colors.text.muted,
-        textAlign: 'center',
         lineHeight: 24,
     },
-    form: {
-        backgroundColor: '#fff',
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+    formContainer: {
+        width: '100%',
     },
     inputContainer: {
         marginBottom: 32,
@@ -174,12 +165,12 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#fff',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
         paddingHorizontal: 16,
-        height: 56,
+        height: 60,
     },
     inputIcon: {
         marginRight: 12,

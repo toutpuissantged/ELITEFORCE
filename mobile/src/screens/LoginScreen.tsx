@@ -77,7 +77,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                         <Text style={styles.subtitle}>Sign in to continue to ELITEFORCE</Text>
                     </View>
 
-                    <View style={styles.form}>
+                    <View style={styles.formContainer}>
                         {error && (
                             <View style={styles.errorBanner}>
                                 <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.colors.error} />
@@ -162,20 +162,18 @@ const styles = StyleSheet.create({
         paddingBottom: theme.spacing.xl,
     },
     header: {
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginTop: 60,
-        marginBottom: 40,
+        marginBottom: 48,
     },
     logoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 64,
+        height: 64,
+        borderRadius: 16,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        marginBottom: 24,
     },
     title: {
         fontSize: 28,
@@ -186,14 +184,9 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 16,
         color: theme.colors.text.muted,
-        textAlign: 'center',
     },
-    form: {
-        backgroundColor: '#fff',
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+    formContainer: {
+        width: '100%',
     },
     errorBanner: {
         flexDirection: 'row',
@@ -222,12 +215,12 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#fff',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
         paddingHorizontal: 16,
-        height: 56,
+        height: 60,
     },
     inputIcon: {
         marginRight: 12,
