@@ -30,6 +30,23 @@
       "eas": {
         "projectId": "9639677e-ca64-470c-b907-5763db22c8c0"
       }
-    }
+    },
+    "plugins": [
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.toutpuissantged.tempmobile",
+          "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff"
+        }
+      ],
+      "expo-dev-client"
+    ]
   }
 }
