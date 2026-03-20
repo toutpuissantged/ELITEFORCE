@@ -30,6 +30,7 @@ model Service {
   basePrice   Float
   duration    Int       // en minutes
   rating      Float     @default(0)
+  image       String?
   available   Boolean   @default(true)
   bookings    Booking[]
 }

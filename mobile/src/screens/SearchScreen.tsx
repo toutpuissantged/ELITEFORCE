@@ -25,7 +25,7 @@ type Props = CompositeScreenProps<
     StackScreenProps<MainStackParamList>
 >;
 
-const CATEGORIES = ['All', 'Ménage', 'Plomberie', 'Électricité', 'Jardinage', 'Déménagement', 'Peinture'];
+const CATEGORIES = ['All', 'Protection VIP', 'Sécurité Événementielle', 'Vidéosurveillance', 'Cybersécurité', 'Transport Sécurisé', 'Audit et Conseil'];
 
 const SearchScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
@@ -67,7 +67,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.searchBar}>
                     <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.text.muted} />
                     <TextInput
-                        placeholder="Search for services..."
+                        placeholder="Rechercher un service..."
                         style={styles.searchInput}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -84,7 +84,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                     {/* Price Slider */}
                     <View style={styles.filterSection}>
                         <View style={styles.filterHeader}>
-                            <Text style={styles.filterLabel}>Max Price: $ {priceRange}</Text>
+                            <Text style={styles.filterLabel}>Prix Max: $ {priceRange}</Text>
                         </View>
                         <Slider
                             style={{ width: '100%', height: 40 }}
@@ -104,7 +104,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
 
                     {/* Rating Stars */}
                     <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>Minimum Rating</Text>
+                        <Text style={styles.filterLabel}>Note Minimum</Text>
                         <View style={styles.starsRow}>
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <TouchableOpacity
@@ -172,7 +172,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={styles.resultCard}
-                            onPress={() => navigation.navigate('ProductDetail', { productId: item.id.toString() })}
+                            onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
                         >
                             <Image
                                 source={{ uri: (item as any).image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?w=800&q=80' }}
@@ -199,7 +199,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                     ListEmptyComponent={() => (
                         <View style={styles.emptyContainer}>
                             <MaterialCommunityIcons name="magnify-close" size={60} color={theme.colors.text.muted} />
-                            <Text style={styles.emptyText}>No services found</Text>
+                            <Text style={styles.emptyText}>Aucun service trouvé</Text>
                         </View>
                     )}
                 />

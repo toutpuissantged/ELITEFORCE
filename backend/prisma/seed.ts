@@ -4,29 +4,35 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 const services = [
-  { name: 'Ménage Standard', description: 'Nettoyage complet de votre domicile (3h)', category: 'Ménage', basePrice: 200, duration: 180, rating: 4.5, available: true },
-  { name: 'Ménage Profond', description: 'Nettoyage en profondeur, vitres incluses', category: 'Ménage', basePrice: 350, duration: 300, rating: 4.8, available: true },
-  { name: 'Réparation Fuite d\'eau', description: 'Intervention rapide pour fuites et tuyauterie', category: 'Plomberie', basePrice: 150, duration: 60, rating: 4.2, available: true },
-  { name: 'Installation Chauffe-eau', description: 'Pose et raccordement de chauffe-eau électrique', category: 'Plomberie', basePrice: 400, duration: 120, rating: 4.7, available: true },
-  { name: 'Dépannage Électrique', description: 'Recherche de court-circuit et réparation', category: 'Électricité', basePrice: 150, duration: 60, rating: 4.9, available: true },
-  { name: 'Installation Prises', description: 'Ajout de 3 prises de courant standards', category: 'Électricité', basePrice: 250, duration: 120, rating: 4.6, available: true },
-  { name: 'Entretien Jardin', description: 'Tonte de pelouse et taille de haies', category: 'Jardinage', basePrice: 300, duration: 180, rating: 4.3, available: true },
-  { name: 'Déménagement Studio', description: 'Camionnette + 2 déménageurs (Demi-journée)', category: 'Déménagement', basePrice: 800, duration: 240, rating: 4.8, available: true },
-  { name: 'Peinture Chambre', description: 'Peinture murs et plafond (max 15m²)', category: 'Peinture', basePrice: 600, duration: 360, rating: 4.7, available: true },
-  { name: 'Montage Meuble', description: 'Montage de meubles en kit type IKEA', category: 'Bricolage', basePrice: 150, duration: 120, rating: 4.5, available: true },
+  { name: 'Garde du corps VIP', description: 'Protection rapprochée haut de gamme pour VIP, cadres, et célébrités. Personnel hautement qualifié.', category: 'Protection VIP', basePrice: 500, duration: 480, rating: 4.9, available: true, image: 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=800&q=80' },
+  { name: 'Escorte Sécurisée', description: 'Accompagnement et protection lors de vos déplacements critiques.', category: 'Protection VIP', basePrice: 300, duration: 240, rating: 4.8, available: true, image: 'https://images.unsplash.com/photo-1596773383049-7ecb6cc4ddea?w=800&q=80' },
+
+  { name: 'Agent de Sécurité Événementiel', description: 'Contrôle d\'accès et sécurisation globale pour vos galas, soirées ou événements d\'entreprise.', category: 'Sécurité Événementielle', basePrice: 400, duration: 360, rating: 4.7, available: true, image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80' },
+
+  { name: 'Installation Vidéosurveillance', description: 'Déploiement de caméras CCTV dernière génération avec monitoring 24/7.', category: 'Vidéosurveillance', basePrice: 800, duration: 240, rating: 4.8, available: true, image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&q=80' },
+  { name: 'Audit Sécurité Caméras', description: 'Inspection complète de vos systèmes de surveillance actuels.', category: 'Vidéosurveillance', basePrice: 150, duration: 120, rating: 4.5, available: true, image: 'https://images.unsplash.com/photo-1621252179027-94459d278660?w=800&q=80' },
+
+  { name: 'Pénétration Test (Cyber)', description: 'Test de vos infrastructures réseaux contre les attaques virtuelles.', category: 'Cybersécurité', basePrice: 1000, duration: 480, rating: 4.9, available: true, image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80' },
+
+  { name: 'Chauffeur Blindé', description: 'Transfert sécurisé en véhicule blindé avec chauffeur formé à la conduite anti-agression.', category: 'Transport Sécurisé', basePrice: 600, duration: 180, rating: 4.8, available: true, image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80' },
+
+  { name: 'Analyse des risques', description: 'Évaluation des vulnérabilités de vos locaux professionnels ou personnels.', category: 'Audit et Conseil', basePrice: 450, duration: 240, rating: 4.7, available: true, image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80' },
 ];
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Cleaning database...');
+  await prisma.booking.deleteMany();
+  await prisma.service.deleteMany();
+  await prisma.user.deleteMany();
+
+  console.log('Seeding database with EliteForce data...');
 
   // Seed admin user
   const salt = await bcrypt.genSalt(12);
   const hashedPassword = await bcrypt.hash('Admin@123', salt);
 
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@eliteforce.com' },
-    update: {},
-    create: {
+  const adminUser = await prisma.user.create({
+    data: {
       email: 'admin@eliteforce.com',
       password: hashedPassword,
       firstName: 'Admin',
@@ -42,7 +48,7 @@ async function main() {
       data: service,
     });
   }
-  console.log('Database seeded successfully with 10 services!');
+  console.log('Database seeded successfully with EliteForce Security Services!');
 }
 
 main()

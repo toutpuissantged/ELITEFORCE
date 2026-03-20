@@ -5,8 +5,6 @@ import BottomTabs from './BottomTabs';
 import PaymentScreen from '../screens/PaymentScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import TrackingScreen from '../screens/TrackingScreen';
-import GroceryScreen from '../screens/GroceryScreen';
-import ProductDetailScreen from '../screens/ProductDetailScreen';
 
 const Stack = createStackNavigator<MainStackParamList>();
 
@@ -22,15 +20,13 @@ export default function MainStack() {
             <Stack.Screen
                 name="ServiceDetail"
                 component={ServiceDetailScreen}
-                options={{ headerShown: true, title: 'Détails du Service' }}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="Tracking"
                 component={TrackingScreen}
                 options={{ headerShown: true, title: 'Suivi Prestataire' }}
             />
-            <Stack.Screen name="Grocery" component={GroceryScreen} />
-            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         </Stack.Navigator>
     );
 }

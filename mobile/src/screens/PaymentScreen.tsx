@@ -41,7 +41,7 @@ const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
         setLoading(true);
         try {
             // 1. Get intent from backend
-            const response = await api.post('/payments/intent', { bookingId });
+            const response = await api.post('/payments/create-intent', { bookingId });
             const { clientSecret } = response.data;
 
             // 2. Confirm payment

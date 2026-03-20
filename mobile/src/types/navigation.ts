@@ -16,9 +16,6 @@ export type BottomTabParamList = {
 export type MainStackParamList = {
     BottomTabs: { screen?: keyof BottomTabParamList; params?: any };
     ServiceDetail: { serviceId: number };
-    Grocery: { category?: string };
-    ProductDetail: { productId: string };
     Payment: { bookingId: number; amount: number; serviceName: string };
     Tracking: { bookingId: number };
 };
-
