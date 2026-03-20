@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     SafeAreaView,
     ScrollView,
-    ActivityIndicator
 } from 'react-native';
 import { 
     ArrowLeft, 
@@ -21,8 +20,17 @@ import { MainStackParamList } from '../types/navigation';
 import { useStripe, CardField } from '@stripe/stripe-react-native';
 import api from '../services/api';
 import { useModal } from '../services/modalService';
+import Skeleton from '../components/Skeleton';
 
 type Props = StackScreenProps<MainStackParamList, 'Payment'>;
+
+const PaymentSkeleton = () => (
+    <View style={styles.scrollContent}>
+        <Skeleton width="100%" height={200} borderRadius={24} style={{ marginBottom: 32 }} />
+        <Skeleton width="40%" height={20} style={{ marginBottom: 16 }} />
+        <Skeleton width="100%" height={150} borderRadius={24} />
+    </View>
+);
 
 const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
     const { amount, serviceName, bookingId } = route.params;
@@ -87,80 +95,80 @@ const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
                 <View style={{ width: 48 }} />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {/* Order Summary - Flat box */}
-                <View style={styles.summaryCard}>
-                    <View style={styles.summaryHeader}>
-                        <InfoCircle size={20} color={theme.colors.text.primary} variant="Outline" />
-                        <Text style={styles.summaryTitle}>Résumé de la commande</Text>
-                    </View>
-                    
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>{serviceName}</Text>
-                        <Text style={styles.summaryValue}>{amount.toFixed(2)} Dhs</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Frais de service</Text>
-                        <Text style={styles.summaryValue}>0.00 Dhs</Text>
-                    </View>
-                    
-                    <View style={styles.divider} />
-                    
-                    <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>Montant Total</Text>
-                        <Text style={styles.totalValue}>{amount.toFixed(2)} Dhs</Text>
-                    </View>
-                </View>
+            {loading ? (
+                <PaymentSkeleton />
+            ) : (
+                <>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                        {/* Order Summary - Flat box */}
+                        <View style={styles.summaryCard}>
+                            <View style={styles.summaryHeader}>
+                                <InfoCircle size={20} color={theme.colors.text.primary} variant="Outline" />
+                                <Text style={styles.summaryTitle}>Résumé de la commande</Text>
+                            </View>
+                            
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>{serviceName}</Text>
+                                <Text style={styles.summaryValue}>{amount.toFixed(2)} Dhs</Text>
+                            </View>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Frais de service</Text>
+                                <Text style={styles.summaryValue}>0.00 Dhs</Text>
+                            </View>
+                            
+                            <View style={styles.divider} />
+                            
+                            <View style={styles.totalRow}>
+                                <Text style={styles.totalLabel}>Montant Total</Text>
+                                <Text style={styles.totalValue}>{amount.toFixed(2)} Dhs</Text>
+                            </View>
+                        </View>
 
-                {/* Card Input Section */}
-                <Text style={styles.sectionTitle}>Détails de la carte</Text>
-                <View style={styles.cardWrapper}>
-                    <View style={styles.cardHeader}>
-                        <CardPos size={24} color={theme.colors.text.primary} variant="Outline" />
-                        <Text style={styles.cardHeaderText}>Carte Bancaire</Text>
-                    </View>
-                    
-                    <CardField
-                        postalCodeEnabled={false}
-                        onCardChange={(details) => setCardDetails(details)}
-                        style={styles.cardField}
-                        cardStyle={{
-                            backgroundColor: '#FFFFFF',
-                            textColor: '#000000',
-                            borderRadius: 12,
-                        }}
-                    />
+                        {/* Card Input Section */}
+                        <Text style={styles.sectionTitle}>Détails de la carte</Text>
+                        <View style={styles.cardWrapper}>
+                            <View style={styles.cardHeader}>
+                                <CardPos size={24} color={theme.colors.text.primary} variant="Outline" />
+                                <Text style={styles.cardHeaderText}>Carte Bancaire</Text>
+                            </View>
+                            
+                            <CardField
+                                postalCodeEnabled={false}
+                                onCardChange={(details) => setCardDetails(details)}
+                                style={styles.cardField}
+                                cardStyle={{
+                                    backgroundColor: '#FFFFFF',
+                                    textColor: '#000000',
+                                    borderRadius: 12,
+                                }}
+                            />
 
-                    <View style={styles.secureNote}>
-                        <Lock1 size={14} color={theme.colors.success} variant="Bold" />
-                        <Text style={styles.secureNoteText}>Paiement chiffré et sécurisé</Text>
-                    </View>
-                </View>
+                            <View style={styles.secureNote}>
+                                <Lock1 size={14} color={theme.colors.success} variant="Bold" />
+                                <Text style={styles.secureNoteText}>Paiement chiffré et sécurisé</Text>
+                            </View>
+                        </View>
 
-                {/* Stripe Trust Badge */}
-                <View style={styles.trustBadge}>
-                    <SecuritySafe size={24} color={theme.colors.text.muted} variant="Outline" />
-                    <Text style={styles.trustText}>Propulsé par Stripe</Text>
-                </View>
-            </ScrollView>
+                        {/* Stripe Trust Badge */}
+                        <View style={styles.trustBadge}>
+                            <SecuritySafe size={24} color={theme.colors.text.muted} variant="Outline" />
+                            <Text style={styles.trustText}>Propulsé par Stripe</Text>
+                        </View>
+                    </ScrollView>
 
-            {/* Bottom Button - Flat and minimalist */}
-            <View style={styles.footer}>
-                <TouchableOpacity
-                    style={[styles.payBtn, (loading || !cardDetails?.complete) && styles.payBtnDisabled]}
-                    onPress={handlePayment}
-                    disabled={loading || !cardDetails?.complete}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <>
+                    {/* Bottom Button - Flat and minimalist */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity
+                            style={[styles.payBtn, (loading || !cardDetails?.complete) && styles.payBtnDisabled]}
+                            onPress={handlePayment}
+                            disabled={loading || !cardDetails?.complete}
+                        >
                             <Text style={styles.payBtnText}>Payer {amount.toFixed(2)} Dhs</Text>
                             <Lock1 size={18} color="#FFF" variant="Outline" style={{ marginLeft: 8 }} />
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            )}
         </SafeAreaView>
     );
 };

@@ -27,10 +27,35 @@ import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { fetchServiceById } from '../store/servicesSlice';
 import { createBooking } from '../store/bookingSlice';
 import { useModal } from '../services/modalService';
+import Skeleton from '../components/Skeleton';
 
 type Props = StackScreenProps<MainStackParamList, 'ServiceDetail'>;
 
 const { width } = Dimensions.get('window');
+
+const DetailSkeleton = () => (
+    <View style={styles.container}>
+        <Skeleton width="100%" height={380} borderRadius={0} />
+        <View style={styles.content}>
+            <View style={{ marginBottom: 24 }}>
+                <Skeleton width="30%" height={12} style={{ marginBottom: 8 }} />
+                <Skeleton width="70%" height={26} />
+            </View>
+            <View style={styles.infoGrid}>
+                <Skeleton width="25%" height={60} borderRadius={16} />
+                <Skeleton width="25%" height={60} borderRadius={16} />
+                <Skeleton width="25%" height={60} borderRadius={16} />
+            </View>
+            <Skeleton width="40%" height={20} style={{ marginBottom: 16 }} />
+            <Skeleton width="100%" height={15} style={{ marginBottom: 8 }} />
+            <Skeleton width="100%" height={15} style={{ marginBottom: 8 }} />
+            <Skeleton width="80%" height={15} style={{ marginBottom: 24 }} />
+            
+            <Skeleton width="50%" height={20} style={{ marginBottom: 16 }} />
+            <Skeleton width="100%" height={100} borderRadius={16} />
+        </View>
+    </View>
+);
 
 const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const { serviceId } = route.params;
@@ -84,11 +109,7 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     if (servicesLoading && !service) {
-        return (
-            <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
-        );
+        return <DetailSkeleton />;
     }
 
     if (!service) {

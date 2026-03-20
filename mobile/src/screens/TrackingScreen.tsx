@@ -29,6 +29,7 @@ import { fetchBookingById } from '../store/bookingSlice';
 import { BookingStatus } from '../types';
 import { SOCKET_URL } from '../config';
 import { useModal } from '../services/modalService';
+import Skeleton from '../components/Skeleton';
 
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
@@ -40,6 +41,33 @@ const INITIAL_STEPS = [
 ];
 
 const { width } = Dimensions.get('window');
+
+const TrackingSkeleton = () => (
+    <View style={styles.container}>
+        <Skeleton width="100%" height={320} borderRadius={0} />
+        <View style={styles.content}>
+            <View style={styles.providerCard}>
+                <Skeleton width={56} height={56} borderRadius={20} />
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                    <Skeleton width="60%" height={18} style={{ marginBottom: 8 }} />
+                    <Skeleton width="30%" height={14} />
+                </View>
+                <Skeleton width={48} height={48} borderRadius={16} />
+            </View>
+            <View style={{ marginTop: 24 }}>
+                {[1, 2, 3, 4].map((i) => (
+                    <View key={i} style={{ flexDirection: 'row', marginBottom: 32 }}>
+                        <Skeleton width={20} height={20} borderRadius={10} />
+                        <View style={{ flex: 1, marginLeft: 16 }}>
+                            <Skeleton width="50%" height={16} style={{ marginBottom: 8 }} />
+                            <Skeleton width="30%" height={12} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
+    </View>
+);
 
 const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const dispatch = useAppDispatch();
@@ -110,11 +138,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     }, [bookingId, token, updateTimeline, showModal, navigation]);
 
     if (loading && !booking) {
-        return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
-        );
+        return <TrackingSkeleton />;
     }
 
     return (

@@ -24,11 +24,38 @@ import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { logout } from '../store/authSlice';
 import { theme } from '../theme';
 import { useModal } from '../services/modalService';
+import Skeleton from '../components/Skeleton';
 
 const { width } = Dimensions.get('window');
 
+const ProfileSkeleton = () => (
+    <View style={styles.container}>
+        <View style={styles.header}>
+            <Skeleton width={100} height={100} borderRadius={32} style={{ marginBottom: 16 }} />
+            <Skeleton width={150} height={24} style={{ marginBottom: 8 }} />
+            <Skeleton width={200} height={14} />
+        </View>
+        <View style={styles.statsRow}>
+            <Skeleton width={60} height={40} />
+            <Skeleton width={60} height={40} />
+            <Skeleton width={60} height={40} />
+        </View>
+        <View style={{ paddingHorizontal: 24, marginTop: 40 }}>
+            <Skeleton width="40%" height={20} style={{ marginBottom: 16 }} />
+            <View style={styles.menuList}>
+                {[1, 2, 3, 4].map((i) => (
+                    <View key={i} style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+                        <Skeleton width={40} height={40} borderRadius={12} />
+                        <Skeleton width="60%" height={16} style={{ marginLeft: 16 }} />
+                    </View>
+                ))}
+            </View>
+        </View>
+    </View>
+);
+
 const ProfileScreen = () => {
-    const { user } = useAppSelector((state) => state.auth);
+    const { user, initializing } = useAppSelector((state) => state.auth);
     const { list: bookings } = useAppSelector((state) => state.bookings);
     const dispatch = useAppDispatch();
     const { showModal } = useModal();
@@ -53,6 +80,10 @@ const ProfileScreen = () => {
         { id: '5', title: 'Sécurité & Confidentialité', icon: ShieldSecurity, color: '#F9FAFB' },
         { id: '6', title: 'Aide & Support', icon: MessageQuestion, color: '#F9FAFB' },
     ];
+
+    if (initializing) {
+        return <ProfileSkeleton />;
+    }
 
     const totalSpent = bookings.reduce((acc, curr) => acc + curr.totalPrice, 0);
 

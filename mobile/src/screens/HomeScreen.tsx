@@ -9,7 +9,6 @@ import {
     Image,
     SafeAreaView,
     Dimensions,
-    ActivityIndicator,
     RefreshControl
 } from 'react-native';
 import { 
@@ -31,6 +30,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { setServicesFilters, fetchServices } from '../store/servicesSlice';
+import Skeleton from '../components/Skeleton';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -47,6 +47,33 @@ const CATEGORIES = [
 ];
 
 const { width } = Dimensions.get('window');
+
+const HomeSkeleton = () => (
+    <View style={styles.skeletonContainer}>
+        <View style={styles.categoriesGrid}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+                <View key={i} style={styles.categoryItem}>
+                    <Skeleton height={110} borderRadius={20} />
+                </View>
+            ))}
+        </View>
+        <View style={styles.sectionHeader}>
+            <Skeleton width={150} height={24} />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredList}>
+            {[1, 2, 3].map((i) => (
+                <View key={i} style={[styles.featuredCard, { borderWeight: 0 }]}>
+                    <Skeleton height={140} borderRadius={0} />
+                    <View style={{ padding: 16 }}>
+                        <Skeleton width="40%" height={12} style={{ marginBottom: 8 }} />
+                        <Skeleton width="80%" height={18} style={{ marginBottom: 12 }} />
+                        <Skeleton width="100%" height={20} />
+                    </View>
+                </View>
+            ))}
+        </ScrollView>
+    </View>
+);
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
@@ -107,7 +134,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.subTitle}>avec EliteForce Security.</Text>
                 </View>
 
-                {/* Search Bar - Minimal Flat Style */}
+                {/* Search Bar */}
                 <View style={styles.searchSection}>
                     <View style={styles.searchBar}>
                         <SearchNormal1 size={20} color={theme.colors.text.muted} variant="Outline" />
@@ -125,70 +152,72 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 </View>
 
-                {/* Categories Grid - Flat minimalist cards */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Services Spécialisés</Text>
-                </View>
-
-                <View style={styles.categoriesGrid}>
-                    {CATEGORIES.map((category) => (
-                        <TouchableOpacity
-                            key={category.id}
-                            style={styles.categoryItem}
-                            onPress={() => {
-                                dispatch(setServicesFilters({ category: category.name }));
-                                navigation.navigate('Search');
-                            }}
-                        >
-                            <View style={styles.categoryCard}>
-                                <category.icon size={28} color={theme.colors.primary} variant="Outline" />
-                                <Text style={styles.categoryName}>{category.name}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Featured Section */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recommandé pour vous</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Search')} style={styles.seeAllBtn}>
-                        <Text style={styles.seeAll}>Voir tout</Text>
-                        <ArrowRight size={14} color={theme.colors.primary} variant="Outline" />
-                    </TouchableOpacity>
-                </View>
-
                 {loading && !refreshing ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginTop: 20 }} />
+                    <HomeSkeleton />
                 ) : (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.featuredList}
-                    >
-                        {list.map((item) => (
-                            <TouchableOpacity
-                                key={item.id}
-                                style={styles.featuredCard}
-                                onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
-                            >
-                                <Image
-                                    source={{ uri: item.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=800&q=80' }}
-                                    style={styles.featuredImage}
-                                />
-                                <View style={styles.featuredInfo}>
-                                    <Text style={styles.itemCategory}>{item.category}</Text>
-                                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                                    <View style={styles.itemFooter}>
-                                        <Text style={styles.itemPrice}>{item.basePrice} Dhs</Text>
-                                        <View style={styles.ratingRow}>
-                                            <Star1 size={14} color="#FFD700" variant="Bold" />
-                                            <Text style={styles.ratingText}>{item.rating}</Text>
+                    <>
+                        {/* Categories Grid */}
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Services Spécialisés</Text>
+                        </View>
+
+                        <View style={styles.categoriesGrid}>
+                            {CATEGORIES.map((category) => (
+                                <TouchableOpacity
+                                    key={category.id}
+                                    style={styles.categoryItem}
+                                    onPress={() => {
+                                        dispatch(setServicesFilters({ category: category.name }));
+                                        navigation.navigate('Search');
+                                    }}
+                                >
+                                    <View style={styles.categoryCard}>
+                                        <category.icon size={28} color={theme.colors.primary} variant="Outline" />
+                                        <Text style={styles.categoryName}>{category.name}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Featured Section */}
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Recommandé pour vous</Text>
+                            <TouchableOpacity onPress={() => navigation.navigate('Search')} style={styles.seeAllBtn}>
+                                <Text style={styles.seeAll}>Voir tout</Text>
+                                <ArrowRight size={14} color={theme.colors.primary} variant="Outline" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.featuredList}
+                        >
+                            {list.map((item) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={styles.featuredCard}
+                                    onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
+                                >
+                                    <Image
+                                        source={{ uri: item.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=800&q=80' }}
+                                        style={styles.featuredImage}
+                                    />
+                                    <View style={styles.featuredInfo}>
+                                        <Text style={styles.itemCategory}>{item.category}</Text>
+                                        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                                        <View style={styles.itemFooter}>
+                                            <Text style={styles.itemPrice}>{item.basePrice} Dhs</Text>
+                                            <View style={styles.ratingRow}>
+                                                <Star1 size={14} color="#FFD700" variant="Bold" />
+                                                <Text style={styles.ratingText}>{item.rating}</Text>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </>
                 )}
 
                 <View style={{ height: 100 }} />
@@ -201,6 +230,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    skeletonContainer: {
+        marginTop: 24,
     },
     header: {
         flexDirection: 'row',

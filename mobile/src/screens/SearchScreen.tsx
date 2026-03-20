@@ -8,7 +8,6 @@ import {
     TouchableOpacity,
     Image,
     TextInput,
-    ActivityIndicator,
     SafeAreaView
 } from 'react-native';
 import { 
@@ -26,6 +25,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { setServicesFilters, fetchServices } from '../store/servicesSlice';
+import Skeleton from '../components/Skeleton';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -33,6 +33,21 @@ type Props = CompositeScreenProps<
 >;
 
 const CATEGORIES = ['All', 'Protection VIP', 'Sécurité Événementielle', 'Vidéosurveillance', 'Cybersécurité', 'Transport Sécurisé', 'Audit et Conseil'];
+
+const SearchSkeleton = () => (
+    <View style={{ paddingHorizontal: 24 }}>
+        {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={styles.resultCard}>
+                <Skeleton width={100} height={100} borderRadius={16} />
+                <View style={{ flex: 1, marginLeft: 16, justifyContent: 'center' }}>
+                    <Skeleton width="40%" height={12} style={{ marginBottom: 8 }} />
+                    <Skeleton width="80%" height={18} style={{ marginBottom: 12 }} />
+                    <Skeleton width="60%" height={16} />
+                </View>
+            </View>
+        ))}
+    </View>
+);
 
 const SearchScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
@@ -157,9 +172,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {loading && !refreshing ? (
-                <View style={styles.loader}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
-                </View>
+                <SearchSkeleton />
             ) : (
                 <FlatList
                     data={list}
@@ -365,11 +378,6 @@ const styles = StyleSheet.create({
     addBtn: {
         width: 32,
         height: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loader: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },

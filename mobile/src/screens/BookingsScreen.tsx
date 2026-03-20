@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     SafeAreaView,
     Image,
-    ActivityIndicator,
     RefreshControl,
     Dimensions
 } from 'react-native';
@@ -15,8 +14,7 @@ import {
     Calendar, 
     Clock, 
     ArrowRight2, 
-    CalendarRemove,
-    TickCircle
+    CalendarRemove
 } from 'iconsax-react-native';
 import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
@@ -26,6 +24,7 @@ import { BottomTabParamList, MainStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { fetchMyBookings } from '../store/bookingSlice';
 import { BookingStatus } from '../types';
+import Skeleton from '../components/Skeleton';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Bookings'>,
@@ -33,6 +32,29 @@ type Props = CompositeScreenProps<
 >;
 
 const { width } = Dimensions.get('window');
+
+const BookingsSkeleton = () => (
+    <View style={{ padding: 24 }}>
+        {[1, 2, 3].map((i) => (
+            <View key={i} style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <Skeleton width={48} height={48} borderRadius={12} />
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                        <Skeleton width="30%" height={10} style={{ marginBottom: 6 }} />
+                        <Skeleton width="60%" height={16} />
+                    </View>
+                    <Skeleton width={80} height={24} borderRadius={8} />
+                </View>
+                <View style={styles.divider} />
+                <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                    <Skeleton width={100} height={14} style={{ marginRight: 20 }} />
+                    <Skeleton width={80} height={14} />
+                </View>
+                <Skeleton width="100%" height={40} borderRadius={12} />
+            </View>
+        ))}
+    </View>
+);
 
 const BookingsScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
@@ -121,9 +143,7 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {loading && !refreshing && bookings.length === 0 ? (
-                <View style={styles.loader}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
-                </View>
+                <BookingsSkeleton />
             ) : (
                 <FlatList
                     data={bookings}
@@ -273,11 +293,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: theme.colors.primary,
         marginRight: 4,
-    },
-    loader: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     emptyState: {
         flex: 1,
