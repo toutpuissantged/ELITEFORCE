@@ -10,6 +10,7 @@ interface AuthState {
     loading: boolean;
     isInitializing: boolean;
     error: string | null;
+    fieldErrors: Record<string, string>;
 }
 
 const initialState: AuthState = {
@@ -19,6 +20,7 @@ const initialState: AuthState = {
     loading: false,
     isInitializing: true,
     error: null,
+    fieldErrors: {},
 };
 
 // Async Thunks
@@ -30,6 +32,9 @@ export const login = createAsyncThunk(
             await storage.setItem('token', response.data.token);
             return response.data;
         } catch (error: any) {
+            if (error.response?.data?.errors) {
+                return rejectWithValue(error.response.data.errors);
+            }
             return rejectWithValue(error.message || 'Login failed');
         }
     }
@@ -43,6 +48,9 @@ export const register = createAsyncThunk(
             await storage.setItem('token', response.data.token);
             return response.data;
         } catch (error: any) {
+            if (error.response?.data?.errors) {
+                return rejectWithValue(error.response.data.errors);
+            }
             return rejectWithValue(error.message || 'Registration failed');
         }
     }
@@ -80,6 +88,7 @@ const authSlice = createSlice({
         },
         clearError: (state) => {
             state.error = null;
+            state.fieldErrors = {};
         },
         setInitializing: (state, action: PayloadAction<boolean>) => {
             state.isInitializing = action.payload;
@@ -91,6 +100,7 @@ const authSlice = createSlice({
             .addCase(login.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.fieldErrors = {};
             })
             .addCase(login.fulfilled, (state, action) => {
                 state.loading = false;
@@ -100,12 +110,21 @@ const authSlice = createSlice({
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                if (Array.isArray(action.payload)) {
+                    state.fieldErrors = action.payload.reduce((acc: any, curr: any) => {
+                        if (curr.path) acc[curr.path] = curr.msg;
+                        return acc;
+                    }, {});
+                    state.error = 'Please check the errors below';
+                } else {
+                    state.error = action.payload as string;
+                }
             })
             // Register
             .addCase(register.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.fieldErrors = {};
             })
             .addCase(register.fulfilled, (state, action) => {
                 state.loading = false;
@@ -115,7 +134,15 @@ const authSlice = createSlice({
             })
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                if (Array.isArray(action.payload)) {
+                    state.fieldErrors = action.payload.reduce((acc: any, curr: any) => {
+                        if (curr.path) acc[curr.path] = curr.msg;
+                        return acc;
+                    }, {});
+                    state.error = 'Registration failed. Please check the fields.';
+                } else {
+                    state.error = action.payload as string;
+                }
             })
             // Fetch Me
             .addCase(fetchMe.pending, (state) => {

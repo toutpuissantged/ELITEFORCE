@@ -16,6 +16,7 @@ import {
 import PhoneInputField from '../components/PhoneInputField';
 import { register, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { registerForPushNotificationsAsync } from '../utils/notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
@@ -37,7 +38,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
     const dispatch = useAppDispatch();
-    const { loading, error } = useAppSelector((state) => state.auth);
+    const { loading, error, fieldErrors } = useAppSelector((state) => state.auth);
+
+    React.useEffect(() => {
+        if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+            setValidationErrors(prev => ({ ...prev, ...fieldErrors }));
+        }
+    }, [fieldErrors]);
 
     const validateField = (name: string, value: string) => {
         let error = '';
@@ -86,6 +93,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const handleRegister = async () => {
         if (!validate()) return;
 
+        const pushToken = await registerForPushNotificationsAsync();
+
         const resultAction = await dispatch(register({
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -94,10 +103,14 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             password: formData.password,
             confirmPassword: formData.confirmPassword,
             acceptTerms: agreeCGU,
+            pushToken: pushToken,
         }));
 
         if (register.rejected.match(resultAction)) {
-            Alert.alert('Error', resultAction.payload as string || 'Registration failed');
+            const payload = resultAction.payload;
+            if (!Array.isArray(payload)) {
+                Alert.alert('Error', payload as string || 'Registration failed');
+            }
         }
     };
 

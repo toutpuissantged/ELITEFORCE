@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Slider from '@react-native-community/slider';
 import {
     View,
     Text,
@@ -30,7 +31,10 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
     const { list, loading, filters } = useAppSelector((state) => state.services);
     const [searchQuery, setSearchQuery] = useState(filters.search);
+    const [priceRange, setPriceRange] = useState(filters.maxPrice || 1000);
+    const [rating, setRating] = useState(filters.rating || 0);
     const [refreshing, setRefreshing] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -70,7 +74,63 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                         placeholderTextColor={theme.colors.text.muted}
                     />
                 </View>
+                <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={styles.filterToggleBtn}>
+                    <MaterialCommunityIcons name="tune" size={24} color={showFilters ? theme.colors.primary : theme.colors.text.primary} />
+                </TouchableOpacity>
             </View>
+
+            {showFilters && (
+                <View style={styles.advancedFiltersContainer}>
+                    {/* Price Slider */}
+                    <View style={styles.filterSection}>
+                        <View style={styles.filterHeader}>
+                            <Text style={styles.filterLabel}>Max Price: $ {priceRange}</Text>
+                        </View>
+                        <Slider
+                            style={{ width: '100%', height: 40 }}
+                            minimumValue={0}
+                            maximumValue={2000}
+                            step={10}
+                            value={priceRange}
+                            onSlidingComplete={(value: number) => {
+                                setPriceRange(value);
+                                dispatch(setServicesFilters({ maxPrice: value }));
+                            }}
+                            minimumTrackTintColor={theme.colors.primary}
+                            maximumTrackTintColor="#000000"
+                            thumbTintColor={theme.colors.primary}
+                        />
+                    </View>
+
+                    {/* Rating Stars */}
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>Minimum Rating</Text>
+                        <View style={styles.starsRow}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <TouchableOpacity
+                                    key={star}
+                                    onPress={() => {
+                                        const newRating = rating === star ? 0 : star;
+                                        setRating(newRating);
+                                        dispatch(setServicesFilters({ rating: newRating }));
+                                    }}
+                                >
+                                    <MaterialCommunityIcons
+                                        name={star <= rating ? "star" : "star-outline"}
+                                        size={32}
+                                        color="#FFD700"
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                            {rating > 0 && (
+                                <TouchableOpacity onPress={() => { setRating(0); dispatch(setServicesFilters({ rating: 0 })); }} style={styles.clearRatingBtn}>
+                                    <Text style={styles.clearRatingText}>Clear</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+                </View>
+            )}
 
             <View style={styles.categoriesContainer}>
                 <FlatList
@@ -182,6 +242,52 @@ const styles = StyleSheet.create({
         height: 48,
         borderWidth: 1,
         borderColor: theme.colors.border,
+    },
+    filterToggleBtn: {
+        width: 48,
+        height: 48,
+        marginLeft: 12,
+        borderRadius: 12,
+        backgroundColor: '#F9FAFB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    advancedFiltersContainer: {
+        backgroundColor: '#fff',
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    filterSection: {
+        marginTop: 12,
+    },
+    filterHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    filterLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+        marginBottom: 8,
+    },
+    starsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    clearRatingBtn: {
+        marginLeft: 16,
+        padding: 4,
+    },
+    clearRatingText: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        textDecorationLine: 'underline',
     },
     searchInput: {
         flex: 1,

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
+import { sendPushNotification } from '../utils/notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-02-24-preview' as any, // Use latest or specific
@@ -78,11 +79,20 @@ const handleWebhook = async (req: Request, res: Response, next: NextFunction) =>
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
     try {
-      await prisma.booking.update({
+      const booking = await prisma.booking.update({
         where: { stripePaymentId: paymentIntent.id },
-        data: { status: 'CONFIRMED', paidAt: new Date() }
+        data: { status: 'CONFIRMED', paidAt: new Date() },
+        include: { user: true, service: true }
       });
       console.log(`Booking with PaymentIntent ${paymentIntent.id} confirmed.`);
+
+      if (booking.user?.pushToken) {
+        await sendPushNotification(
+          booking.user.pushToken,
+          'Paiement Confirmé',
+          `Votre paiement pour ${booking.service.name} a été validé !`
+        );
+      }
 
     } catch (updateError: any) {
       console.error(`Error updating booking: ${updateError.message}`);

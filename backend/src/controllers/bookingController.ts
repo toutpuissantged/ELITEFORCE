@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { sendPushNotification } from '../utils/notifications';
 
 const prisma = new PrismaClient();
 
@@ -141,6 +142,24 @@ const updateBookingStatus = async (req: Request, res: Response, next: NextFuncti
       data: { status },
       include: { user: true, service: true }
     });
+
+    if (booking.user?.pushToken) {
+      let title = 'Mise à jour de réservation';
+      let body = `Le statut de votre réservation pour ${booking.service.name} a changé.`;
+
+      if (status === 'IN_PROGRESS') {
+        title = 'Prestataire en route';
+        body = `Votre prestataire pour ${booking.service.name} est en route !`;
+      } else if (status === 'COMPLETED') {
+        title = 'Mission terminée';
+        body = `La mission pour ${booking.service.name} a été marquée comme terminée.`;
+      } else if (status === 'CANCELLED') {
+        title = 'Réservation annulée';
+        body = `Votre réservation pour ${booking.service.name} a été annulée.`;
+      }
+
+      await sendPushNotification(booking.user.pushToken, title, body);
+    }
 
     res.json(booking);
   } catch (error) {

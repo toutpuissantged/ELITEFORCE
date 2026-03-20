@@ -39,6 +39,7 @@ const { width } = Dimensions.get('window');
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
     const { list, loading } = useAppSelector((state) => state.services);
+    const { user } = useAppSelector((state) => state.auth);
 
     useEffect(() => {
         dispatch(fetchServices({}));
@@ -66,8 +67,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>Stay Cool with Our</Text>
-                    <Text style={[styles.title, { color: theme.colors.text.muted }]}>Collections.</Text>
+                    <Text style={styles.title}>Bonjour, {user?.firstName || 'Invité'}</Text>
+                    <Text style={[styles.title, { color: theme.colors.text.muted, fontSize: 24, marginTop: 4 }]}>Trouvez le service idéal.</Text>
                 </View>
 
                 {/* Search Bar */}

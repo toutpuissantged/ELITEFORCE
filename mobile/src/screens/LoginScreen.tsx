@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { login, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { registerForPushNotificationsAsync } from '../utils/notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
@@ -27,7 +28,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const dispatch = useAppDispatch();
-    const { loading, error } = useAppSelector((state) => state.auth);
+    const { loading, error, fieldErrors } = useAppSelector((state) => state.auth);
+
+    useEffect(() => {
+        dispatch(clearError());
+    }, [dispatch]);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -35,9 +40,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             return;
         }
 
-        const resultAction = await dispatch(login({ email, password }));
+        const pushToken = await registerForPushNotificationsAsync();
+        const resultAction = await dispatch(login({ email, password, pushToken }));
         if (login.rejected.match(resultAction)) {
-            Alert.alert('Error', resultAction.payload as string || 'Login failed');
+            const payload = resultAction.payload;
+            if (!Array.isArray(payload)) {
+                Alert.alert('Error', payload as string || 'Login failed');
+            }
         }
     };
 
@@ -78,6 +87,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                     placeholderTextColor={theme.colors.text.muted}
                                 />
                             </View>
+                            {fieldErrors && fieldErrors.email && <Text style={styles.fieldErrorText}>{fieldErrors.email}</Text>}
                         </View>
 
                         <View style={styles.inputContainer}>
@@ -96,6 +106,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                     <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.colors.text.muted} />
                                 </TouchableOpacity>
                             </View>
+                            {fieldErrors && fieldErrors.password && <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>}
                         </View>
 
                         <TouchableOpacity
@@ -249,6 +260,13 @@ const styles = StyleSheet.create({
         color: theme.colors.primary,
         fontWeight: '700',
         fontSize: 14,
+    },
+    fieldErrorText: {
+        color: theme.colors.error,
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 4,
+        fontWeight: '500',
     },
 });
 

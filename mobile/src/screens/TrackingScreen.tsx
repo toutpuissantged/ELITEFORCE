@@ -9,8 +9,9 @@ import {
     ScrollView,
     Alert,
     Dimensions,
-    ActivityIndicator
+    ActivityIndicator,
 } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -39,7 +40,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const booking = bookings.find(b => b.id === bookingId);
 
     const { token } = useAppSelector(state => state.auth);
-    const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
+    const [location, setLocation] = useState({ latitude: 33.5731, longitude: -7.5898 }); // Default to Casablanca HQ
     const [steps, setSteps] = useState(INITIAL_STEPS);
 
     const updateTimeline = useCallback((newStatus: BookingStatus) => {
@@ -116,23 +117,24 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Map Placeholder */}
+                {/* Map View */}
                 <View style={styles.mapPlaceholder}>
-                    <Image
-                        source={{ uri: 'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=800&q=80' }}
+                    <MapView
+                        provider={PROVIDER_GOOGLE}
                         style={styles.mapImage}
-                    />
-                    <View style={[
-                        styles.providerMarker,
-                        {
-                            transform: [
-                                { translateX: location.longitude * 150 }, // Simulated movement
-                                { translateY: location.latitude * 150 }
-                            ]
-                        }
-                    ]}>
-                        <MaterialCommunityIcons name="truck-delivery" size={24} color="#fff" />
-                    </View>
+                        region={{
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                            latitudeDelta: 0.05,
+                            longitudeDelta: 0.05,
+                        }}
+                    >
+                        <Marker coordinate={location}>
+                            <View style={styles.providerMarker}>
+                                <MaterialCommunityIcons name="truck-delivery" size={24} color="#fff" />
+                            </View>
+                        </Marker>
+                    </MapView>
                 </View>
 
                 {/* Tracking Content */}
@@ -241,7 +243,6 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     providerMarker: {
-        position: 'absolute',
         width: 44,
         height: 44,
         borderRadius: 22,
