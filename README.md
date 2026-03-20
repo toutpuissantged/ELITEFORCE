@@ -1,114 +1,60 @@
-# MultiServices - EliteForce Test
+# ELITEFORCE.GLOBAL - Senior Technical Test
 
-![Node](https://img.shields.io/badge/Node.js-20-green) ![License](https://img.shields.io/badge/License-MIT-blue) ![Postgres](https://img.shields.io/badge/PostgreSQL-15-blue) ![Expo](https://img.shields.io/badge/Expo-50-black)
+## Project Overview
+MultiServices platform built with React Native (Expo), Node.js (Express), PostgreSQL (Prisma), and Socket.io. This project is a complete production-ready MVP featuring real-time tracking, secure Stripe payments, and a premium mobile design system.
 
-MultiServices is a comprehensive platform connecting users with service providers (cleaning, plumbing, etc.) in real-time. It features a complete React Native mobile app and a robust Node.js/PostgreSQL backend, offering seamless booking, real-time tracking, push notifications, and secure Stripe payments.
+## Features
+- **Mobile**: High-radius premium design, real-time service tracking, debounced search & filters, deep linking, and secure checkout.
+- **Backend**: JWT Authentication (saltRounds: 12), Role-based Authorization, Stripe Webhooks, Socket.io for live tracking, Rate Limiting, and Swagger API Documentation.
+- **Real-time**: Live provider location updates and instant booking status synchronization.
 
 ## Prerequisites
+- Node.js v20+
+- PostgreSQL v15+
+- Docker & Docker Compose (Optional for deployment)
+- Expo CLI
 
-- Node.js (v20 or higher recommended)
-- PostgreSQL (v15 or higher)
-- Expo CLI (`npm install -g expo-cli`)
-- Docker & Docker Compose (optional, for deployment)
+## Setup & Installation
 
-## Installation Instructions
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-repo/eliteforce-test.git
+cd eliteforce-test
+```
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/eliteforce-test-[votre-prenom]-[votre-nom].git
-   cd eliteforce-test-[votre-prenom]-[votre-nom]
-   ```
-
-2. **Setup Backend:**
-   ```bash
-   cd backend
-   npm install
-   cp .env.example .env
-   # Make sure PostgreSQL is running and update DATABASE_URL in .env if needed
-   npx prisma migrate dev --name init
-   npx prisma db seed
-   ```
-
-3. **Setup Mobile:**
-   ```bash
-   cd ../mobile
-   npm install
-   cp .env.example .env
-   ```
-
-## Running the Application
-
-**Start the Backend:**
+### 2. Backend Setup
 ```bash
 cd backend
-npm start
+npm install
+cp .env.example .env # Fill with your credentials
+npx prisma generate
+npx prisma db push
+npm run seed
+npm run dev
 ```
-The server will run on `http://localhost:3000`.
 
-**Start the Mobile App:**
+### 3. Mobile Setup
 ```bash
 cd mobile
+npm install
+cp .env.example .env # Fill API_URL with your local IP
 npx expo start
 ```
-Use the Expo Go app on your phone or an emulator to scan the QR code and run the app.
 
-## Environment Variables
+## API Documentation
+The API is documented using Swagger. Once the backend is running, visit:
+`http://localhost:3000/api/docs`
 
-### Backend (`backend/.env`)
-- `PORT`: Port on which the server will run (default: 3000).
-- `DATABASE_URL`: PostgreSQL connection string.
-- `JWT_SECRET`: Secret key for signing JWTs.
-- `JWT_EXPIRES_IN`: JWT expiration time (e.g., `7d`).
-- `STRIPE_SECRET_KEY`: Stripe API secret key.
-- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret.
-
-### Mobile (`mobile/.env`)
-- `API_URL`: URL of the backend API (e.g., `http://localhost:3000` or local IP).
-- `STRIPE_PUBLISHABLE_KEY`: Stripe API publishable key.
-- `GOOGLE_MAPS_API_KEY`: Google Maps API key for location features.
-
-## Screenshots
-
-*(Placeholder for screenshots - to be added later)*
-- Screenshot 1: Home Screen
-- Screenshot 2: Search & Filters
-- Screenshot 3: Payment Screen
-- Screenshot 4: Booking Details
-- Screenshot 5: Profile
-
-## Architecture Diagram
-
-```ascii
-+-------------------+       REST API       +--------------------+
-|                   | <------------------> |                    |
-|   React Native    |      Socket.io       |   Node.js Server   |
-|   (Expo) App      | <------------------> |   (Express.js)     |
-|                   |                      |                    |
-+-------------------+                      +--------------------+
-        ^                                            |
-        | Stripe SDK                                 | Prisma ORM
-        v                                            v
-+-------------------+                      +--------------------+
-|                   |       Webhooks       |                    |
-|   Stripe API      | <------------------> |  PostgreSQL DB     |
-|                   |                      |                    |
-+-------------------+                      +--------------------+
+## Docker Deployment
+Run the entire stack with a single command:
+```bash
+docker-compose up --build
 ```
 
-## API Endpoints
+## Project Structure
+- `mobile/`: React Native Expo application.
+- `backend/`: Node.js Express API with Prisma.
+- `docker-compose.yml`: Root orchestration file.
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `GET /api/services` - List services (with filters)
-- `POST /api/bookings` - Create a new booking
-- `POST /api/payments/create-intent` - Create Stripe PaymentIntent
-
-More documentation can be found at `http://localhost:3000/api/docs` (Swagger) when the server is running.
-
-## Contribution Guide
-
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'Add some amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
+---
+**EliteForce Technical Test - 2024**

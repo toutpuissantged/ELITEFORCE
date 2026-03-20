@@ -1,203 +1,319 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useAppSelector } from '../hooks/store';
-import { CardField, useStripe, StripeProvider } from '@stripe/stripe-react-native';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    SafeAreaView,
+    ScrollView,
+    Image,
+    ActivityIndicator
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
-import axios from 'axios';
 
-type ContentProps = StackScreenProps<MainStackParamList, 'Payment'>;
+type Props = StackScreenProps<MainStackParamList, 'Payment'>;
 
-const PaymentScreenContent = ({ route, navigation }: ContentProps) => {
-    const { bookingId, amount, serviceName } = route.params;
-    const { user, token } = useAppSelector((state) => state.auth);
+const METHODS = [
+    { id: '1', title: 'Credit Card', icon: 'credit-card-outline', last4: '4242' },
+    { id: '2', title: 'Apple Pay', icon: 'apple', last4: null },
+    { id: '3', title: 'PayPal', icon: 'wallet-outline', last4: null },
+];
 
-    const [clientSecret, setClientSecret] = useState<string | null>(null);
+const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
+    const { amount, serviceName } = route.params;
+    const [selectedMethod, setSelectedMethod] = useState('1');
     const [loading, setLoading] = useState(false);
-    const [isCardComplete, setIsCardComplete] = useState(false);
 
-    const { confirmPayment } = useStripe();
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
-    useEffect(() => {
-        fetchPaymentIntent();
-    }, []);
-
-    const fetchPaymentIntent = async () => {
-        try {
-            const response = await axios.post(
-                `${API_URL}/api/payments/create-intent`,
-                { bookingId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setClientSecret(response.data.clientSecret);
-        } catch (error) {
-            console.error('Error fetching payment intent:', error);
-            Alert.alert('Erreur', 'Impossible de préparer le paiement.');
-            navigation.goBack();
-        }
-    };
-
-    const handlePayment = async () => {
-        if (!clientSecret || !user) return;
-
+    const handlePayment = () => {
         setLoading(true);
-
-        try {
-            const { error, paymentIntent } = await confirmPayment(clientSecret, {
-                paymentMethodType: 'Card',
-                paymentMethodData: {
-                    billingDetails: {
-                        email: user.email,
-                        name: `${user.firstName} ${user.lastName}`,
-                    },
-                },
-            });
-
-            if (error) {
-                Alert.alert('Échec du paiement', error.message);
-            } else if (paymentIntent) {
-                Alert.alert('Succès', 'Votre paiement a été traité avec succès !', [
-                    { text: 'OK', onPress: () => navigation.navigate('BottomTabs', { screen: 'Bookings' }) }
-                ]);
-            }
-        } catch (error) {
-            Alert.alert('Erreur', 'Une erreur est survenue lors du paiement.');
-        } finally {
+        setTimeout(() => {
             setLoading(false);
-        }
+            navigation.navigate('Tracking', { bookingId: route.params.bookingId });
+        }, 2000);
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Récapitulatif de la commande</Text>
-
-            <View style={styles.summaryCard}>
-                <Text style={styles.summaryText}>Service: <Text style={styles.bold}>{serviceName || `Réservation #${bookingId}`}</Text></Text>
-                <Text style={styles.summaryText}>Montant total: <Text style={styles.boldAmount}>{amount} Dhs</Text></Text>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Checkout</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <Text style={styles.label}>Détails de la carte</Text>
-            <CardField
-                postalCodeEnabled={false}
-                placeholders={{
-                    number: 'Numéro de carte',
-                }}
-                cardStyle={{
-                    backgroundColor: '#FFFFFF',
-                    textColor: '#000000',
-                }}
-                style={styles.cardField}
-                onCardChange={(cardDetails) => {
-                    setIsCardComplete(cardDetails.complete);
-                }}
-            />
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.content}>
+                    {/* Order Summary */}
+                    <View style={styles.summaryCard}>
+                        <Text style={styles.sectionTitle}>Order Summary</Text>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>{serviceName}</Text>
+                            <Text style={styles.summaryValue}>$ {amount.toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Delivery Fee</Text>
+                            <Text style={styles.summaryValue}>$ 5.00</Text>
+                        </View>
+                        <View style={styles.divider} />
+                        <View style={styles.totalRow}>
+                            <Text style={styles.totalLabel}>Total Amount</Text>
+                            <Text style={styles.totalValue}>$ {(amount + 5).toFixed(2)}</Text>
+                        </View>
+                    </View>
 
-            <View style={styles.securityContainer}>
-                <MaterialCommunityIcons name="lock" size={16} color="#4CAF50" />
-                <Text style={styles.securityText}>Paiement sécurisé par Stripe</Text>
+                    {/* Payment Methods */}
+                    <Text style={styles.sectionTitle}>Payment Method</Text>
+                    {METHODS.map((method) => (
+                        <TouchableOpacity
+                            key={method.id}
+                            style={[
+                                styles.methodCard,
+                                selectedMethod === method.id && styles.methodCardSelected
+                            ]}
+                            onPress={() => setSelectedMethod(method.id)}
+                        >
+                            <View style={[styles.methodIconContainer, { backgroundColor: selectedMethod === method.id ? theme.colors.primary : '#F3F4F6' }]}>
+                                <MaterialCommunityIcons
+                                    name={method.icon as any}
+                                    size={24}
+                                    color={selectedMethod === method.id ? '#fff' : theme.colors.text.secondary}
+                                />
+                            </View>
+                            <View style={styles.methodInfo}>
+                                <Text style={styles.methodTitle}>{method.title}</Text>
+                                {method.last4 && <Text style={styles.methodSubtitle}>•••• •••• •••• {method.last4}</Text>}
+                            </View>
+                            <View style={[styles.radio, selectedMethod === method.id && styles.radioSelected]}>
+                                {selectedMethod === method.id && <View style={styles.radioInner} />}
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+
+                    <TouchableOpacity style={styles.addMethodBtn}>
+                        <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />
+                        <Text style={styles.addMethodText}>Add New Payment Method</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ height: 120 }} />
+            </ScrollView>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+                <View style={styles.footerInfo}>
+                    <Text style={styles.footerLabel}>Total Payment</Text>
+                    <Text style={styles.footerValue}>$ {(amount + 5).toFixed(2)}</Text>
+                </View>
+                <TouchableOpacity
+                    style={[styles.payBtn, loading && styles.payBtnDisabled]}
+                    onPress={handlePayment}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.payBtnText}>Pay Now</Text>
+                    )}
+                </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-                style={[styles.payButton, (!isCardComplete || !clientSecret || loading) && styles.payButtonDisabled]}
-                onPress={handlePayment}
-                disabled={!isCardComplete || !clientSecret || loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.payButtonText}>Payer {amount} Dhs</Text>
-                )}
-            </TouchableOpacity>
-        </View>
+        </SafeAreaView>
     );
 };
-
-export default function PaymentScreen({ route, navigation }: ContentProps) {
-    const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx'; // Dummy fallback key
-
-    return (
-        <StripeProvider
-            publishableKey={STRIPE_PUBLISHABLE_KEY}
-        >
-            <PaymentScreenContent route={route} navigation={navigation} />
-        </StripeProvider>
-    );
-}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: theme.colors.background,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#333',
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.md,
+        backgroundColor: '#fff',
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    content: {
+        padding: theme.spacing.lg,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 16,
+        marginTop: 8,
     },
     summaryCard: {
         backgroundColor: '#fff',
+        borderRadius: theme.borderRadius.xl,
         padding: 20,
-        borderRadius: 12,
-        marginBottom: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        marginBottom: 32,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    summaryText: {
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    summaryLabel: {
+        fontSize: 14,
+        color: theme.colors.text.secondary,
+    },
+    summaryValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#F3F4F6',
+        marginVertical: 16,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    totalLabel: {
         fontSize: 16,
-        color: '#555',
-        marginBottom: 10,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
     },
-    bold: {
-        fontWeight: 'bold',
-        color: '#333',
+    totalValue: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: theme.colors.primary,
     },
-    boldAmount: {
-        fontWeight: 'bold',
-        color: '#2e64e5',
-        fontSize: 18,
+    methodCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    label: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 10,
+    methodCardSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: '#F0FDF4',
     },
-    cardField: {
-        width: '100%',
-        height: 50,
-        marginVertical: 10,
+    methodIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    securityContainer: {
+    methodInfo: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    methodTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    methodSubtitle: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginTop: 2,
+    },
+    radio: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 2,
+        borderColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    radioSelected: {
+        borderColor: theme.colors.primary,
+    },
+    radioInner: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: theme.colors.primary,
+    },
+    addMethodBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
-        marginBottom: 30,
+        padding: 16,
+        marginTop: 8,
     },
-    securityText: {
+    addMethodText: {
+        marginLeft: 8,
         fontSize: 14,
-        color: '#4CAF50',
-        marginLeft: 5,
+        fontWeight: '600',
+        color: theme.colors.primary,
     },
-    payButton: {
-        backgroundColor: '#2e64e5',
-        padding: 15,
-        borderRadius: 10,
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        padding: theme.spacing.lg,
+        paddingBottom: 34,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+    },
+    footerInfo: {
+        justifyContent: 'center',
+    },
+    footerLabel: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginBottom: 2,
+    },
+    footerValue: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    payBtn: {
+        backgroundColor: theme.colors.primary,
+        height: 56,
+        paddingHorizontal: 40,
+        borderRadius: 16,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    payButtonDisabled: {
-        backgroundColor: '#a0b4e6',
+    payBtnDisabled: {
+        backgroundColor: theme.colors.text.muted,
     },
-    payButtonText: {
+    payBtnText: {
         color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });
+
+export default PaymentScreen;

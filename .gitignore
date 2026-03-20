@@ -8,3 +8,5 @@ coverage/
 *.log
 backend_js
 mobile_js
+
+.pnpm-cache/

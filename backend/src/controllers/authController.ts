@@ -21,7 +21,7 @@ const generateToken = (user: UserPayload) => {
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { firstName, lastName, email, password, phone } = req.body;
+    const { firstName, lastName, email, password, phone, pushToken } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -38,6 +38,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
         email,
         password: hashedPassword,
         phone,
+        pushToken,
       },
       select: {
         id: true,
@@ -45,6 +46,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
         lastName: true,
         email: true,
         phone: true,
+        pushToken: true,
         role: true,
         createdAt: true,
       }
@@ -60,7 +62,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, pushToken } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
 
@@ -68,10 +70,18 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Update push token on login if provided
+    if (pushToken && user.pushToken !== pushToken) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { pushToken }
+      });
+    }
+
     const { password: _, ...userWithoutPassword } = user;
     const token = generateToken(user);
 
-    res.json({ user: userWithoutPassword, token });
+    res.json({ user: { ...userWithoutPassword, pushToken }, token });
   } catch (error) {
     next(error);
   }
@@ -87,6 +97,7 @@ const getMe = async (req: any, res: Response, next: NextFunction) => {
         lastName: true,
         email: true,
         phone: true,
+        pushToken: true,
         role: true,
         createdAt: true,
       }

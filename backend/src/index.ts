@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import os from 'os';
 
 dotenv.config();
 
@@ -80,6 +81,24 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Function to get local IP address
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]!) {
+      // Skip internal and non-IPv4 addresses
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const HOST = getLocalIP();
+
+server.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Server is running on:`);
+  console.log(`  - Local:    http://localhost:${PORT}`);
+  console.log(`  - Network:  http://${HOST}:${PORT}`);
 });

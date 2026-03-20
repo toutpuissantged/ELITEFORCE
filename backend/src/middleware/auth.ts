@@ -1,10 +1,19 @@
+/// <reference path="../types/express.d.ts" />
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    email: string;
+    role: Role;
+  };
+}
+
 // The Request type is extended in types/express.d.ts
 
-const authenticate = (req: Request, res: Response, next: NextFunction) => {
+const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -24,7 +33,7 @@ const authenticate = (req: Request, res: Response, next: NextFunction) => {
 const authorize = (roles: Role | Role[] = []) => {
   const rolesArray = Array.isArray(roles) ? roles : [roles];
 
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user || (rolesArray.length && !rolesArray.includes(req.user.role))) {
       return res.status(403).json({ message: 'Access denied: Insufficient permissions' });
     }

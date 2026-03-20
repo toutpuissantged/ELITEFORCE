@@ -8,14 +8,18 @@ export type AuthStackParamList = {
 
 export type BottomTabParamList = {
     Home: undefined;
-    Search: { category?: string } | undefined;
-    Bookings: undefined;
+    Chats: undefined;
+    Videos: undefined;
+    Cart: undefined;
     Profile: undefined;
 };
 
 export type MainStackParamList = {
     BottomTabs: { screen?: keyof BottomTabParamList; params?: any };
     ServiceDetail: { serviceId: number };
+    Grocery: { category?: string };
+    ProductDetail: { productId: string };
     Payment: { bookingId: number; amount: number; serviceName: string };
     Tracking: { bookingId: number };
 };
+

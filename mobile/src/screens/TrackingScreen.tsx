@@ -1,62 +1,342 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useSocket } from '../services/socketService';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    SafeAreaView,
+    Image,
+    ScrollView,
+    Alert,
+    Dimensions
+} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
+import io from 'socket.io-client';
+import { useAppSelector } from '../hooks/store';
 
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
-export default function TrackingScreen({ route }: Props) {
-    const { bookingId } = route.params;
-    const { socket, joinBookingRoom } = useSocket();
-    const [providerLocation, setProviderLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+const STEPS = [
+    { id: '1', title: 'Order Confirmed', time: '10:30 AM', completed: true },
+    { id: '2', title: 'Preparing Order', time: '10:45 AM', completed: true },
+    { id: '3', title: 'Driver is on the way', time: '11:00 AM', completed: false, active: true },
+    { id: '4', title: 'Delivered', time: '--:--', completed: false },
+];
+
+const { width } = Dimensions.get('window');
+
+const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
+    const { bookingId } = (route.params as any) || { bookingId: '1' };
+    const { token } = useAppSelector(state => state.auth);
+    const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
+    const [status, setStatus] = useState('PENDING');
+    const [steps, setSteps] = useState(STEPS);
+
+    const API_URL = process.env.API_URL || 'http://localhost:3000';
+
+    const updateTimeline = (newStatus: string) => {
+        setSteps(prevSteps => prevSteps.map(step => {
+            if (newStatus === 'CONFIRMED' && step.id === '1') return { ...step, completed: true };
+            if (newStatus === 'IN_PROGRESS' && step.id === '3') return { ...step, active: true, completed: false };
+            if (newStatus === 'COMPLETED') return { ...step, completed: true, active: false };
+            return step;
+        }));
+    };
 
     useEffect(() => {
-        if (socket && bookingId) {
-            joinBookingRoom(bookingId);
+        if (!token) return;
 
-            const handleLocationUpdate = (location: { latitude: number, longitude: number }) => {
-                setProviderLocation(location);
-            };
+        const socket = io(API_URL.replace('/api', ''), {
+            auth: { token }
+        });
 
-            socket.on('provider-location', handleLocationUpdate);
+        socket.on('connect', () => {
+            console.log('Connected to socket');
+            socket.emit('join-booking-room', bookingId);
+        });
 
-            return () => {
-                socket.off('provider-location', handleLocationUpdate);
-            };
-        }
-    }, [socket, bookingId]);
+        socket.on('provider-location', (coords: { latitude: number, longitude: number }) => {
+            setLocation(coords);
+        });
+
+        socket.on('booking-status-update', (data: { status: string }) => {
+            setStatus(data.status);
+            updateTimeline(data.status);
+        });
+
+        socket.on('mission-completed', () => {
+            Alert.alert('Success', 'Your service has been completed!');
+            navigation.navigate('BottomTabs', { screen: 'Bookings' } as any);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [bookingId, token]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Suivi de votre prestataire</Text>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Track Order</Text>
+                <TouchableOpacity style={styles.helpBtn}>
+                    <MaterialCommunityIcons name="help-circle-outline" size={24} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+            </View>
 
-            {providerLocation ? (
-                <View style={styles.locationCard}>
-                    <Text style={styles.label}>Position actuelle :</Text>
-                    <Text style={styles.value}>Latitude: {providerLocation.latitude}</Text>
-                    <Text style={styles.value}>Longitude: {providerLocation.longitude}</Text>
-                    {/* Note: In a real app, react-native-maps would be used here to display a map marker */}
-                    <View style={styles.mapPlaceholder}>
-                        <Text style={styles.placeholderText}>[ CARTE EN TEMPS RÉEL ICI ]</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Map Placeholder */}
+                <View style={styles.mapPlaceholder}>
+                    <Image
+                        source={{ uri: 'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=800&q=80' }}
+                        style={styles.mapImage}
+                    />
+                    <View style={[
+                        styles.providerMarker,
+                        {
+                            transform: [
+                                { translateX: location.longitude * 150 }, // Simulated movement
+                                { translateY: location.latitude * 150 }
+                            ]
+                        }
+                    ]}>
+                        <MaterialCommunityIcons name="truck-delivery" size={24} color="#fff" />
                     </View>
                 </View>
-            ) : (
-                <View style={styles.locationCard}>
-                    <Text style={styles.waitingText}>En attente de la position du prestataire...</Text>
+
+                {/* Tracking Content */}
+                <View style={styles.content}>
+                    <View style={styles.providerCard}>
+                        <Image
+                            source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&q=80' }}
+                            style={styles.providerImage}
+                        />
+                        <View style={styles.providerInfo}>
+                            <Text style={styles.providerName}>John Doe</Text>
+                            <Text style={styles.providerRole}>Delivery Partner</Text>
+                        </View>
+                        <View style={styles.actionBtns}>
+                            <TouchableOpacity style={styles.actionBtn}>
+                                <MaterialCommunityIcons name="phone-outline" size={20} color={theme.colors.primary} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <Text style={styles.sectionTitle}>Order Status: {status}</Text>
+                    <View style={styles.timeline}>
+                        {steps.map((step, index) => (
+                            <View key={step.id} style={styles.stepContainer}>
+                                <View style={styles.indicatorContainer}>
+                                    <View style={[
+                                        styles.dot,
+                                        step.completed && styles.dotCompleted,
+                                        step.active && styles.dotActive
+                                    ]}>
+                                        {step.completed && <MaterialCommunityIcons name="check" size={12} color="#fff" />}
+                                    </View>
+                                    {index < steps.length - 1 && (
+                                        <View style={[
+                                            styles.line,
+                                            step.completed && styles.lineCompleted
+                                        ]} />
+                                    )}
+                                </View>
+                                <View style={styles.stepInfo}>
+                                    <Text style={[
+                                        styles.stepTitle,
+                                        step.active && styles.stepTitleActive
+                                    ]}>{step.title}</Text>
+                                    <Text style={styles.stepTime}>{step.time}</Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
                 </View>
-            )}
-        </View>
+            </ScrollView>
+        </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#f9f9f9', justifyContent: 'center' },
-    title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
-    locationCard: { backgroundColor: '#fff', padding: 20, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, alignItems: 'center' },
-    label: { fontSize: 16, color: '#666', marginBottom: 10 },
-    value: { fontSize: 18, fontWeight: 'bold', color: '#2e64e5', marginBottom: 5 },
-    mapPlaceholder: { width: '100%', height: 200, backgroundColor: '#e6eeff', marginTop: 20, justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
-    placeholderText: { color: '#2e64e5', fontWeight: 'bold' },
-    waitingText: { fontSize: 16, color: '#888', fontStyle: 'italic' },
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.md,
+        backgroundColor: '#fff',
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    helpBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    mapPlaceholder: {
+        height: 300,
+        width: '100%',
+        backgroundColor: '#FAFAFA',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    mapImage: {
+        width: '100%',
+        height: '100%',
+        opacity: 0.6,
+    },
+    providerMarker: {
+        position: 'absolute',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    content: {
+        padding: theme.spacing.lg,
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        backgroundColor: '#fff',
+        marginTop: -32,
+        minHeight: 400,
+    },
+    providerCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        borderRadius: 24,
+        padding: 16,
+        marginBottom: 32,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    providerImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    providerInfo: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    providerName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    providerRole: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginTop: 2,
+    },
+    actionBtns: {
+        flexDirection: 'row',
+    },
+    actionBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 24,
+    },
+    timeline: {
+        paddingLeft: 8,
+    },
+    stepContainer: {
+        flexDirection: 'row',
+        height: 80,
+    },
+    indicatorContainer: {
+        alignItems: 'center',
+        width: 30,
+    },
+    dot: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1,
+    },
+    dotCompleted: {
+        backgroundColor: theme.colors.success,
+    },
+    dotActive: {
+        backgroundColor: theme.colors.primary,
+        borderWidth: 4,
+        borderColor: '#E0F2FE',
+    },
+    line: {
+        width: 2,
+        flex: 1,
+        backgroundColor: '#E5E7EB',
+        marginVertical: 4,
+    },
+    lineCompleted: {
+        backgroundColor: theme.colors.success,
+    },
+    stepInfo: {
+        flex: 1,
+        marginLeft: 16,
+        paddingTop: 0,
+    },
+    stepTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: theme.colors.text.muted,
+    },
+    stepTitleActive: {
+        color: theme.colors.text.primary,
+        fontWeight: '700',
+    },
+    stepTime: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginTop: 4,
+    },
 });
+
+export default TrackingScreen;

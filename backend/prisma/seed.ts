@@ -1,46 +1,139 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Start seeding...');
+  // Clear existing data
+  await prisma.booking.deleteMany();
+  await prisma.service.deleteMany();
+  await prisma.user.deleteMany();
 
+  const salt = await bcrypt.genSalt(12);
+  const hashedPassword = await bcrypt.hash('Password123!', salt);
+
+  // Create Admin
+  await prisma.user.create({
+    data: {
+      firstName: 'Admin',
+      lastName: 'Elite',
+      email: 'admin@eliteforce.global',
+      password: hashedPassword,
+      phone: '+212600000000',
+      role: 'ADMIN',
+    },
+  });
+
+  // Create Client
+  await prisma.user.create({
+    data: {
+      firstName: 'Test',
+      lastName: 'Client',
+      email: 'client@example.com',
+      password: hashedPassword,
+      phone: '+212611111111',
+      role: 'CLIENT',
+    },
+  });
+
+  // Create Services (10 minimum)
   const services = [
-    { name: 'Menage complet', description: 'Nettoyage en profondeur de toutes les pièces.', category: 'Menage', basePrice: 150, duration: 120, rating: 4.8 },
-    { name: 'Plomberie urgence', description: 'Intervention rapide pour fuites et débouchage.', category: 'Plomberie', basePrice: 300, duration: 60, rating: 4.9 },
-    { name: 'Electricité réparation', description: 'Diagnostic et réparation de pannes électriques.', category: 'Electricite', basePrice: 200, duration: 90, rating: 4.7 },
-    { name: 'Jardinage tonte', description: 'Tonte de pelouse et entretien basique.', category: 'Jardinage', basePrice: 100, duration: 60, rating: 4.5 },
-    { name: 'Demenagement camion', description: 'Aide au déménagement avec camion 20m3.', category: 'Demenagement', basePrice: 500, duration: 240, rating: 4.6 },
-    { name: 'Peinture murs', description: 'Peinture murale au m².', category: 'Peinture', basePrice: 250, duration: 180, rating: 4.8 },
-    { name: 'Menage standard', description: 'Nettoyage régulier et dépoussiérage.', category: 'Menage', basePrice: 100, duration: 90, rating: 4.6 },
-    { name: 'Installation chauffe-eau', description: 'Pose et raccordement de chauffe-eau.', category: 'Plomberie', basePrice: 400, duration: 120, rating: 4.9 },
-    { name: 'Pose luminaire', description: 'Installation de plafonniers et appliques.', category: 'Electricite', basePrice: 80, duration: 45, rating: 4.7 },
-    { name: 'Nettoyage terrasse', description: 'Nettoyage haute pression de terrasse.', category: 'Jardinage', basePrice: 120, duration: 60, rating: 4.5 },
+    {
+      name: 'Nettoyage Complet',
+      description: 'Nettoyage professionnel de toute la maison.',
+      category: 'Ménage',
+      basePrice: 300,
+      duration: 120,
+      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?w=800&q=80',
+    },
+    {
+      name: 'Réparation de Fuite',
+      description: 'Intervention rapide pour fuites d\'eau.',
+      category: 'Plomberie',
+      basePrice: 200,
+      duration: 60,
+      image: 'https://images.unsplash.com/photo-1585704032915-c3400ca1f963?w=800&q=80',
+    },
+    {
+      name: 'Installation Luminaire',
+      description: 'Installation de plafonniers et appliques.',
+      category: 'Électricité',
+      basePrice: 150,
+      duration: 45,
+      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80',
+    },
+    {
+      name: 'Taille de Haies',
+      description: 'Entretien de vos espaces verts.',
+      category: 'Jardinage',
+      basePrice: 250,
+      duration: 90,
+      image: 'https://images.unsplash.com/photo-1558905734-b8301138833b?w=800&q=80',
+    },
+    {
+      name: 'Déménagement Appartement',
+      description: 'Aide au transport et emballage.',
+      category: 'Déménagement',
+      basePrice: 1200,
+      duration: 300,
+      image: 'https://images.unsplash.com/photo-1520038410233-7141be7e6f97?w=800&q=80',
+    },
+    {
+      name: 'Peinture Murale',
+      description: 'Rafraîchissement de vos murs (par m²).',
+      category: 'Peinture',
+      basePrice: 50,
+      duration: 60,
+      image: 'https://images.unsplash.com/photo-1562592306-4533036e7638?w=800&q=80',
+    },
+    {
+      name: 'Lavage de Vitres',
+      description: 'Nettoyage éclatant pour vos fenêtres.',
+      category: 'Ménage',
+      basePrice: 100,
+      duration: 45,
+      image: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=800&q=80',
+    },
+    {
+      name: 'Débouchage Canalisation',
+      description: 'Intervention d\'urgence plomberie.',
+      category: 'Plomberie',
+      basePrice: 350,
+      duration: 90,
+      image: 'https://images.unsplash.com/photo-1542013936693-884638332954?w=800&q=80',
+    },
+    {
+      name: 'Mise en Conformité',
+      description: 'Vérification de votre tableau électrique.',
+      category: 'Électricité',
+      basePrice: 500,
+      duration: 180,
+      image: 'https://images.unsplash.com/photo-1544724569-5f546fa602b5?w=800&q=80',
+    },
+    {
+      name: 'Pose de Gazon',
+      description: 'Création de pelouse sur mesure.',
+      category: 'Jardinage',
+      basePrice: 800,
+      duration: 240,
+      image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80',
+    },
   ];
 
   for (const service of services) {
-    const existingService = await prisma.service.findFirst({
-      where: { name: service.name }
+    await prisma.service.create({
+      data: service,
     });
-
-    if (!existingService) {
-      const createdService = await prisma.service.create({
-        data: service
-      });
-      console.log(`Created service: ${createdService.name}`);
-    }
   }
 
-  console.log('Seeding finished.');
+  console.log('Seed completed successfully!');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
-

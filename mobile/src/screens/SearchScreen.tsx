@@ -1,51 +1,62 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../hooks/store';
-import { setServicesList, setServicesLoading, setServicesError } from '../store/servicesSlice';
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    Image,
+    TextInput,
+    ActivityIndicator,
+    SafeAreaView
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
-import { Service } from '../types';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { setServicesFilters, setServicesLoading, setServicesError, setServicesList } from '../store/servicesSlice';
 import axios from 'axios';
 
 type Props = CompositeScreenProps<
-    BottomTabScreenProps<BottomTabParamList, 'Search'>,
+    BottomTabScreenProps<BottomTabParamList, 'Home'>,
     StackScreenProps<MainStackParamList>
 >;
 
-const categories = ['Tous', 'Ménage', 'Plomberie', 'Électricité', 'Jardinage', 'Déménagement', 'Peinture'];
+const CATEGORIES = ['All', 'Ménage', 'Plomberie', 'Électricité', 'Jardinage', 'Déménagement', 'Peinture'];
 
-export default function SearchScreen({ route, navigation }: Props) {
-    const initialCategory = route.params?.category || 'Tous';
-
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-    const [minPrice, setMinPrice] = useState('');
-    const [maxPrice, setMaxPrice] = useState('');
-    const [rating, setRating] = useState('');
-    const [refreshing, setRefreshing] = useState(false);
-
-    const { list: services, loading, error } = useAppSelector((state) => state.services);
+const SearchScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
+    const { list, loading, filters } = useAppSelector((state) => state.services);
+    const [searchQuery, setSearchQuery] = useState(filters.search);
+    const [refreshing, setRefreshing] = useState(false);
 
     const API_URL = process.env.API_URL || 'http://localhost:3000';
 
-    const fetchServices = async (query = searchQuery, category = selectedCategory, min = minPrice, max = maxPrice, rtg = rating) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            dispatch(setServicesFilters({ search: searchQuery }));
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const fetchServices = async () => {
         dispatch(setServicesLoading(true));
         try {
-            const params: any = {};
-            if (query) params.search = query;
-            if (category && category !== 'Tous') params.category = category;
-            if (min) params.minPrice = min;
-            if (max) params.maxPrice = max;
-            if (rtg) params.rating = rtg;
+            const params = new URLSearchParams();
+            if (filters.search) params.append('search', filters.search);
+            if (filters.category && filters.category !== 'All') params.append('category', filters.category);
+            if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
+            if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+            if (filters.rating) params.append('rating', filters.rating.toString());
 
-            const response = await axios.get(`${API_URL}/api/services`, { params });
+            const response = await axios.get(`${API_URL}/api/services?${params.toString()}`);
             dispatch(setServicesList(response.data));
-        } catch (err: any) {
-            dispatch(setServicesError(err.message));
+        } catch (error) {
+            dispatch(setServicesError('Failed to load services'));
         } finally {
             dispatch(setServicesLoading(false));
             setRefreshing(false);
@@ -53,171 +64,259 @@ export default function SearchScreen({ route, navigation }: Props) {
     };
 
     useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            fetchServices(searchQuery, selectedCategory, minPrice, maxPrice, rating);
-        }, 400);
+        fetchServices();
+    }, [filters]);
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery, selectedCategory, minPrice, maxPrice, rating]);
-
-    const onRefresh = useCallback(() => {
+    const onRefresh = () => {
         setRefreshing(true);
-        fetchServices(searchQuery, selectedCategory, minPrice, maxPrice, rating);
-    }, [searchQuery, selectedCategory, minPrice, maxPrice, rating]);
-
-    const renderCategoryChip = ({ item }: { item: string }) => (
-        <TouchableOpacity
-            style={[styles.chip, selectedCategory === item && styles.chipSelected]}
-            onPress={() => setSelectedCategory(item)}
-        >
-            <Text style={[styles.chipText, selectedCategory === item && styles.chipTextSelected]}>
-                {item}
-            </Text>
-        </TouchableOpacity>
-    );
-
-    const renderServiceItem = ({ item }: { item: Service }) => (
-        <TouchableOpacity
-            style={styles.serviceCard}
-            onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
-        >
-            <Image
-                source={{ uri: 'https://via.placeholder.com/150' }}
-                style={styles.serviceImage}
-            />
-            <View style={styles.serviceInfo}>
-                <Text style={styles.serviceName}>{item.name}</Text>
-                <Text style={styles.serviceCategory}>{item.category}</Text>
-                <View style={styles.priceRatingRow}>
-                    <Text style={styles.servicePrice}>{item.basePrice} Dhs</Text>
-                    <View style={styles.ratingContainer}>
-                        <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-                        <Text style={styles.ratingText}>{item.rating}</Text>
-                    </View>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
+        fetchServices();
+    };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                </TouchableOpacity>
                 <View style={styles.searchBar}>
-                    <MaterialCommunityIcons name="magnify" size={24} color="#888" />
+                    <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.text.muted} />
                     <TextInput
+                        placeholder="Search for services..."
                         style={styles.searchInput}
-                        placeholder="Rechercher..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <MaterialCommunityIcons name="close-circle" size={20} color="#888" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <View style={styles.filtersContainer}>
-                    <FlatList
-                        data={categories}
-                        renderItem={renderCategoryChip}
-                        keyExtractor={(item) => item}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                    />
-                </View>
-
-                <View style={styles.advancedFilters}>
-                    <TextInput
-                        style={styles.filterInput}
-                        placeholder="Prix min"
-                        keyboardType="numeric"
-                        value={minPrice}
-                        onChangeText={setMinPrice}
-                    />
-                    <TextInput
-                        style={styles.filterInput}
-                        placeholder="Prix max"
-                        keyboardType="numeric"
-                        value={maxPrice}
-                        onChangeText={setMaxPrice}
-                    />
-                    <TextInput
-                        style={styles.filterInput}
-                        placeholder="Note min (ex: 4)"
-                        keyboardType="numeric"
-                        value={rating}
-                        onChangeText={setRating}
+                        placeholderTextColor={theme.colors.text.muted}
                     />
                 </View>
             </View>
 
-            {error ? (
-                <Text style={styles.errorText}>Erreur de chargement des services</Text>
-            ) : loading && !refreshing ? (
-                <ActivityIndicator size="large" color="#2e64e5" style={styles.loader} />
-            ) : services.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <MaterialCommunityIcons name="clipboard-text-off-outline" size={64} color="#ccc" />
-                    <Text style={styles.emptyText}>Aucun résultat trouvé</Text>
+            <View style={styles.categoriesContainer}>
+                <FlatList
+                    data={CATEGORIES}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.categoriesList}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.categoryChip,
+                                (filters.category === item || (item === 'All' && !filters.category)) && styles.categoryChipSelected
+                            ]}
+                            onPress={() => dispatch(setServicesFilters({ category: item === 'All' ? '' : item }))}
+                        >
+                            <Text style={[
+                                styles.categoryText,
+                                (filters.category === item || (item === 'All' && !filters.category)) && styles.categoryTextSelected
+                            ]}>
+                                {item}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+
+            {loading && !refreshing ? (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
-                    data={services}
-                    renderItem={renderServiceItem}
+                    data={list}
                     keyExtractor={(item) => item.id.toString()}
-                    contentContainerStyle={styles.listContainer}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
+                    contentContainerStyle={styles.resultsList}
+                    showsVerticalScrollIndicator={false}
+                    onRefresh={onRefresh}
+                    refreshing={refreshing}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.resultCard}
+                            onPress={() => navigation.navigate('ProductDetail', { productId: item.id.toString() })}
+                        >
+                            <Image
+                                source={{ uri: (item as any).image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?w=800&q=80' }}
+                                style={styles.resultImage}
+                            />
+                            <View style={styles.resultInfo}>
+                                <View style={styles.categoryRow}>
+                                    <Text style={styles.resultCategory}>{item.category}</Text>
+                                    <View style={styles.ratingRow}>
+                                        <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
+                                        <Text style={styles.ratingText}>{item.rating}</Text>
+                                    </View>
+                                </View>
+                                <Text style={styles.resultName}>{item.name}</Text>
+                                <View style={styles.priceRow}>
+                                    <Text style={styles.resultPrice}>$ {item.basePrice}</Text>
+                                    <TouchableOpacity style={styles.addBtn}>
+                                        <MaterialCommunityIcons name="plus" size={20} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                    ListEmptyComponent={() => (
+                        <View style={styles.emptyContainer}>
+                            <MaterialCommunityIcons name="magnify-close" size={60} color={theme.colors.text.muted} />
+                            <Text style={styles.emptyText}>No services found</Text>
+                        </View>
+                    )}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f9f9f9' },
-    header: { backgroundColor: '#fff', padding: 20, paddingTop: 60, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-    searchBar: {
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    header: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 10,
-        marginBottom: 15,
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.md,
+        backgroundColor: '#fff',
     },
-    searchInput: { flex: 1, marginLeft: 10, fontSize: 16 },
-    filtersContainer: { height: 40, marginBottom: 10 },
-    advancedFilters: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 5 },
-    filterInput: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 8, padding: 8, marginHorizontal: 5, fontSize: 14 },
-    chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0', marginRight: 10, justifyContent: 'center' },
-    chipSelected: { backgroundColor: '#2e64e5' },
-    chipText: { color: '#666', fontWeight: '500' },
-    chipTextSelected: { color: '#fff' },
-    loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContainer: { padding: 15 },
-    serviceCard: {
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    searchBar: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FAFAFA',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        height: 48,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 8,
+        fontSize: 14,
+        color: theme.colors.text.primary,
+    },
+    categoriesContainer: {
+        backgroundColor: '#fff',
+        paddingBottom: theme.spacing.md,
+    },
+    categoriesList: {
+        paddingHorizontal: theme.spacing.lg,
+    },
+    categoryChip: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#F9FAFB',
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    categoryChipSelected: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
+    },
+    categoryText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.text.secondary,
+    },
+    categoryTextSelected: {
+        color: '#fff',
+    },
+    resultsList: {
+        padding: theme.spacing.lg,
+    },
+    resultCard: {
         flexDirection: 'row',
         backgroundColor: '#fff',
-        borderRadius: 12,
-        marginBottom: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
-        overflow: 'hidden',
+        borderRadius: theme.borderRadius.lg,
+        padding: 12,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    serviceImage: { width: 100, height: 100 },
-    serviceInfo: { flex: 1, padding: 12, justifyContent: 'space-between' },
-    serviceName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    serviceCategory: { fontSize: 13, color: '#888', marginTop: 2 },
-    priceRatingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    servicePrice: { fontSize: 15, color: '#2e64e5', fontWeight: 'bold' },
-    ratingContainer: { flexDirection: 'row', alignItems: 'center' },
-    ratingText: { fontSize: 13, color: '#666', marginLeft: 4 },
-    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    emptyText: { marginTop: 10, fontSize: 16, color: '#888' },
-    errorText: { textAlign: 'center', marginTop: 20, color: 'red', fontSize: 16 },
+    resultImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 16,
+    },
+    resultInfo: {
+        flex: 1,
+        marginLeft: 16,
+        justifyContent: 'center',
+    },
+    categoryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    resultCategory: {
+        fontSize: 11,
+        color: theme.colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    ratingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    ratingText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+        marginLeft: 4,
+    },
+    resultName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 8,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    resultPrice: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.primary,
+    },
+    addBtn: {
+        backgroundColor: theme.colors.primary,
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 100,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: theme.colors.text.muted,
+        marginTop: 16,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });
+
+export default SearchScreen;

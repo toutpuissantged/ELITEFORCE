@@ -1,149 +1,249 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    Image,
+    ScrollView,
+    SafeAreaView,
+    Alert
+} from 'react-native';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { logout } from '../store/authSlice';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { BottomTabParamList } from '../types/navigation';
-import axios from 'axios';
+import { theme } from '../theme';
 
-type Props = BottomTabScreenProps<BottomTabParamList, 'Profile'>;
-
-export default function ProfileScreen({ navigation }: Props) {
-    const { user, token } = useAppSelector((state) => state.auth);
+const ProfileScreen = () => {
+    const { user } = useAppSelector((state) => state.auth);
     const dispatch = useAppDispatch();
 
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
     const handleLogout = async () => {
-        try {
-            // Optional: Call the backend to invalidate token if implemented
-            await axios.post(`${API_URL}/api/auth/logout`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-        } catch (e) {
-            console.error(e);
-        } finally {
-            await AsyncStorage.removeItem('token');
-            dispatch(logout());
-            // Navigation resets to AuthStack automatically
-        }
-    };
-
-    const confirmLogout = () => {
         Alert.alert(
-            'Déconnexion',
-            'Voulez-vous vraiment vous déconnecter ?',
+            'Logout',
+            'Are you sure you want to log out?',
             [
-                { text: 'Annuler', style: 'cancel' },
-                { text: 'Déconnexion', onPress: handleLogout, style: 'destructive' },
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await AsyncStorage.removeItem('token');
+                        dispatch(logout());
+                    },
+                },
             ]
         );
     };
 
+    const MENU_ITEMS = [
+        { id: '1', title: 'Personal Information', icon: 'account-outline', color: '#F0FDF4' },
+        { id: '2', title: 'Payment Methods', icon: 'credit-card-outline', color: '#FFFBEB' },
+        { id: '3', title: 'My Bookings', icon: 'calendar-check-outline', color: '#F5F3FF' },
+        { id: '4', title: 'Notifications', icon: 'bell-outline', color: '#FEF2F2' },
+        { id: '5', title: 'Privacy Policy', icon: 'shield-lock-outline', color: '#F0FDFA' },
+        { id: '6', title: 'Help & Support', icon: 'help-circle-outline', color: '#FDF2F2' },
+    ];
+
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.avatarContainer}>
-                    <MaterialCommunityIcons name="account" size={60} color="#fff" />
-                </View>
-                <Text style={styles.nameText}>{user?.firstName} {user?.lastName}</Text>
-                <Text style={styles.emailText}>{user?.email}</Text>
-            </View>
-
-            <View style={styles.infoSection}>
-                <div style={styles.infoRow}>
-                    <MaterialCommunityIcons name="phone" size={24} color="#666" />
-                    <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Téléphone</Text>
-                        <Text style={styles.infoValue}>{user?.phone || 'Non renseigné'}</Text>
+        <SafeAreaView style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Header Profile */}
+                <View style={styles.header}>
+                    <View style={styles.profileImageContainer}>
+                        <Image
+                            source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80' }}
+                            style={styles.profileImage}
+                        />
+                        <TouchableOpacity style={styles.editBtn}>
+                            <MaterialCommunityIcons name="pencil" size={16} color="#fff" />
+                        </TouchableOpacity>
                     </View>
-                </div>
-
-                <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="shield-account" size={24} color="#666" />
-                    <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Rôle</Text>
-                        <Text style={styles.infoValue}>{user?.role}</Text>
-                    </View>
+                    <Text style={styles.userName}>{user?.firstName} {user?.lastName}</Text>
+                    <Text style={styles.userEmail}>{user?.email}</Text>
                 </View>
 
-                <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="calendar-month" size={24} color="#666" />
-                    <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Membre depuis</Text>
-                        <Text style={styles.infoValue}>
-                            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                        </Text>
+                {/* Stats */}
+                <View style={styles.statsContainer}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>12</Text>
+                        <Text style={styles.statLabel}>Orders</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>$420</Text>
+                        <Text style={styles.statLabel}>Spent</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>5</Text>
+                        <Text style={styles.statLabel}>Reviews</Text>
                     </View>
                 </View>
-            </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
-                <MaterialCommunityIcons name="logout" size={24} color="#FF3B30" />
-                <Text style={styles.logoutText}>Se déconnecter</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                {/* Menu */}
+                <View style={styles.menuSection}>
+                    <Text style={styles.sectionTitle}>Account Settings</Text>
+                    <View style={styles.menuContainer}>
+                        {MENU_ITEMS.map((item) => (
+                            <TouchableOpacity key={item.id} style={styles.menuItem}>
+                                <View style={[styles.menuIconContainer, { backgroundColor: item.color }]}>
+                                    <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.primary} />
+                                </View>
+                                <Text style={styles.menuText}>{item.title}</Text>
+                                <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.text.muted} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Logout Button */}
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                    <MaterialCommunityIcons name="logout" size={22} color={theme.colors.error} />
+                    <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 100 }} />
+            </ScrollView>
+        </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f9f9f9' },
-    header: {
-        backgroundColor: '#2e64e5',
-        alignItems: 'center',
-        paddingTop: 60,
-        paddingBottom: 30,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        elevation: 5,
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
     },
-    avatarContainer: {
+    header: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        backgroundColor: '#fff',
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    profileImageContainer: {
+        position: 'relative',
+        marginBottom: 16,
+    },
+    profileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderWidth: 4,
+        borderColor: '#f5f5f5',
+    },
+    editBtn: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: theme.colors.primary,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 15,
+        borderWidth: 2,
+        borderColor: '#fff',
     },
-    nameText: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 5 },
-    emailText: { fontSize: 16, color: '#e0e0e0' },
-    infoSection: {
+    userName: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 4,
+    },
+    userEmail: {
+        fontSize: 14,
+        color: theme.colors.text.muted,
+    },
+    statsContainer: {
+        flexDirection: 'row',
         backgroundColor: '#fff',
-        marginTop: 20,
-        marginHorizontal: 20,
-        borderRadius: 15,
+        marginHorizontal: theme.spacing.lg,
+        marginTop: -30,
+        borderRadius: theme.borderRadius.xl,
         padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        justifyContent: 'space-around',
+        alignItems: 'center',
     },
-    infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    infoContent: { marginLeft: 15, borderBottomWidth: 1, borderBottomColor: '#eee', flex: 1, paddingBottom: 10 },
-    infoLabel: { fontSize: 14, color: '#888', marginBottom: 5 },
-    infoValue: { fontSize: 16, color: '#333', fontWeight: '500' },
-    logoutButton: {
+    statItem: {
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+    },
+    statDivider: {
+        width: 1,
+        height: 30,
+        backgroundColor: theme.colors.border,
+    },
+    menuSection: {
+        paddingHorizontal: theme.spacing.lg,
+        marginTop: 40,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 16,
+    },
+    menuContainer: {
+        backgroundColor: '#fff',
+        borderRadius: theme.borderRadius.xl,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#FAFAFA',
+    },
+    menuIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    menuText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
+        color: theme.colors.text.primary,
+    },
+    logoutBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
+        marginHorizontal: theme.spacing.lg,
         marginTop: 30,
-        marginHorizontal: 20,
-        padding: 15,
-        borderRadius: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        backgroundColor: '#FFF5F5',
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
     },
-    logoutText: { fontSize: 18, color: '#FF3B30', fontWeight: 'bold', marginLeft: 10 },
+    logoutText: {
+        marginLeft: 8,
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.error,
+    },
 });
+
+export default ProfileScreen;

@@ -1,197 +1,223 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
-import { useAppSelector } from '../hooks/store';
+import React from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    SafeAreaView,
+    Image
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSocket } from '../services/socketService';
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
-import { Booking } from '../types';
-import axios from 'axios';
 
 type Props = CompositeScreenProps<
-    BottomTabScreenProps<BottomTabParamList, 'Bookings'>,
+    BottomTabScreenProps<BottomTabParamList, 'Home'>,
     StackScreenProps<MainStackParamList>
 >;
 
-export default function BookingsScreen({ navigation }: Props) {
-    const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+const BOOKINGS = [
+    {
+        id: '1',
+        service: 'Grocery Delivery',
+        date: 'Oct 24, 2023',
+        time: '10:30 AM',
+        status: 'In Progress',
+        price: '45.00',
+        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80',
+    },
+    {
+        id: '2',
+        service: 'Pharmacy Pick-up',
+        date: 'Oct 22, 2023',
+        time: '02:15 PM',
+        status: 'Completed',
+        price: '12.50',
+        image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=400&q=80',
+    },
+];
 
-    const { token } = useAppSelector((state) => state.auth);
-    const { socket, joinBookingRoom } = useSocket();
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
-    const fetchBookings = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/bookings/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setBookings(response.data);
-            setError(null);
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchBookings();
-    }, []);
-
-    useEffect(() => {
-        if (socket && bookings.length > 0) {
-            bookings.forEach(booking => {
-                if (booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS') {
-                    joinBookingRoom(booking.id);
-                }
-            });
-
-            const handleStatusUpdate = (data: { bookingId: number, status: Booking['status'] }) => {
-                const { bookingId, status } = data;
-                setBookings(prevBookings => prevBookings.map(b =>
-                    b.id === bookingId ? { ...b, status } : b
-                ));
-            };
-
-            const handleLocationUpdate = (location: { latitude: number, longitude: number }) => {
-                // Here we could update a map or show an indicator
-                console.log(`Provider is at Lat: ${location.latitude}, Lng: ${location.longitude}`);
-            };
-
-            socket.on('booking-status-update', handleStatusUpdate);
-            socket.on('provider-location', handleLocationUpdate);
-
-            return () => {
-                socket.off('booking-status-update', handleStatusUpdate);
-                socket.off('provider-location', handleLocationUpdate);
-            };
-        }
-    }, [socket, bookings]);
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        fetchBookings();
-    }, []);
-
-    const getStatusColor = (status: string) => {
+const BookingsScreen: React.FC<Props> = ({ navigation }) => {
+    const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'PENDING': return '#FFA500'; // Orange
-            case 'CONFIRMED': return '#2e64e5'; // Blue
-            case 'IN_PROGRESS': return '#8A2BE2'; // Purple
-            case 'COMPLETED': return '#32CD32'; // Green
-            case 'CANCELLED': return '#FF0000'; // Red
-            default: return '#888';
+            case 'In Progress': return { bg: '#E0F2FE', text: '#0369A1' };
+            case 'Completed': return { bg: '#F0FDF4', text: '#15803D' };
+            case 'Cancelled': return { bg: '#FEF2F2', text: '#B91C1C' };
+            default: return { bg: '#F3F4F6', text: '#4B5563' };
         }
     };
-
-    const renderBookingItem = ({ item }: { item: Booking }) => (
-        <View style={styles.bookingCard}>
-            <View style={styles.headerRow}>
-                <Text style={styles.serviceName}>{item.service?.name}</Text>
-                <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                    {item.status}
-                </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <MaterialCommunityIcons name="calendar" size={16} color="#666" />
-                <Text style={styles.detailText}>
-                    {new Date(item.scheduledAt).toLocaleDateString()} à {new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <MaterialCommunityIcons name="map-marker" size={16} color="#666" />
-                <Text style={styles.detailText}>{item.address}</Text>
-            </View>
-
-            <View style={styles.footerRow}>
-                <Text style={styles.priceText}>{item.totalPrice} Dhs</Text>
-                {item.status === 'PENDING' && (
-                    <TouchableOpacity
-                        style={styles.payButton}
-                        onPress={() => navigation.navigate('Payment', {
-                            bookingId: item.id,
-                            amount: item.totalPrice,
-                            serviceName: item.service?.name || ''
-                        })}
-                    >
-                        <Text style={styles.payButtonText}>Payer</Text>
-                    </TouchableOpacity>
-                )}
-                {item.status === 'IN_PROGRESS' && (
-                    <TouchableOpacity
-                        style={styles.trackButton}
-                        onPress={() => navigation.navigate('Tracking', { bookingId: item.id })}
-                    >
-                        <Text style={styles.payButtonText}>Suivre</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </View>
-    );
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Mes Réservations</Text>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.title}>My Bookings</Text>
+            </View>
 
-            {error ? (
-                <Text style={styles.errorText}>{error}</Text>
-            ) : loading && !refreshing ? (
-                <ActivityIndicator size="large" color="#2e64e5" style={styles.loader} />
-            ) : bookings.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <MaterialCommunityIcons name="calendar-blank" size={64} color="#ccc" />
-                    <Text style={styles.emptyText}>Aucune réservation trouvée</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={bookings}
-                    renderItem={renderBookingItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    contentContainerStyle={styles.listContainer}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                />
-            )}
-        </View>
+            <FlatList
+                data={BOOKINGS}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                renderItem={({ item }) => {
+                    const statusStyle = getStatusStyle(item.status);
+                    return (
+                        <TouchableOpacity
+                            style={styles.bookingCard}
+                            onPress={() => item.status === 'In Progress' && navigation.navigate('Tracking', { bookingId: parseInt(item.id) })}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Image source={{ uri: item.image }} style={styles.serviceImage} />
+                                <View style={styles.mainInfo}>
+                                    <Text style={styles.serviceName}>{item.service}</Text>
+                                    <View style={styles.dateTimeRow}>
+                                        <MaterialCommunityIcons name="calendar-outline" size={14} color={theme.colors.text.muted} />
+                                        <Text style={styles.dateTimeText}>{item.date} • {item.time}</Text>
+                                    </View>
+                                </View>
+                                <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                                    <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.divider} />
+
+                            <View style={styles.cardFooter}>
+                                <View style={styles.priceContainer}>
+                                    <Text style={styles.priceLabel}>Total Price</Text>
+                                    <Text style={styles.priceValue}>$ {item.price}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.detailsBtn}
+                                    onPress={() => { }}
+                                >
+                                    <Text style={styles.detailsBtnText}>View Details</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                }}
+                ListEmptyComponent={() => (
+                    <View style={styles.emptyContainer}>
+                        <MaterialCommunityIcons name="calendar-blank" size={60} color={theme.colors.text.muted} />
+                        <Text style={styles.emptyText}>No bookings yet</Text>
+                    </View>
+                )}
+            />
+        </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f9f9f9', paddingTop: 60 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#333', paddingHorizontal: 20, marginBottom: 15 },
-    loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContainer: { padding: 20 },
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    header: {
+        padding: theme.spacing.lg,
+        backgroundColor: '#fff',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    listContent: {
+        padding: theme.spacing.lg,
+    },
     bookingCard: {
         backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 15,
-        marginBottom: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        borderRadius: theme.borderRadius.xl,
+        marginBottom: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    serviceName: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-    statusText: { fontSize: 14, fontWeight: 'bold' },
-    detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-    detailText: { fontSize: 14, color: '#666', marginLeft: 8 },
-    footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 },
-    priceText: { fontSize: 16, fontWeight: 'bold', color: '#2e64e5' },
-    payButton: { backgroundColor: '#2e64e5', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8 },
-    payButtonText: { color: '#fff', fontWeight: 'bold' },
-    trackButton: { backgroundColor: '#8A2BE2', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8 },
-    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    emptyText: { marginTop: 10, fontSize: 16, color: '#888' },
-    errorText: { textAlign: 'center', marginTop: 20, color: 'red', fontSize: 16 },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    serviceImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 15,
+        backgroundColor: '#F3F4F6',
+    },
+    mainInfo: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    serviceName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        marginBottom: 4,
+    },
+    dateTimeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dateTimeText: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+        marginLeft: 4,
+    },
+    statusBadge: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+    },
+    statusText: {
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#FAFAFA',
+        marginVertical: 16,
+    },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    priceContainer: {
+        justifyContent: 'center',
+    },
+    priceLabel: {
+        fontSize: 10,
+        color: theme.colors.text.muted,
+        marginBottom: 2,
+    },
+    priceValue: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.primary,
+    },
+    detailsBtn: {
+        backgroundColor: '#F9FAFB',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    detailsBtnText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 100,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: theme.colors.text.muted,
+        marginTop: 16,
+    },
 });
+
+export default BookingsScreen;

@@ -1,190 +1,305 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../hooks/store';
-import { setServicesList, setServicesLoading, setServicesError } from '../store/servicesSlice';
+import React from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    Image,
+    SafeAreaView,
+    Dimensions
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
-import { Service } from '../types';
-import axios from 'axios';
+import { useAppDispatch } from '../hooks/store';
+import { setServicesFilters } from '../store/servicesSlice';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
     StackScreenProps<MainStackParamList>
 >;
 
-const categories = [
-    { id: '1', name: 'Ménage', icon: 'broom' as const },
-    { id: '2', name: 'Plomberie', icon: 'pipe-wrench' as const },
-    { id: '3', name: 'Électricité', icon: 'lightning-bolt' as const },
-    { id: '4', name: 'Jardinage', icon: 'flower' as const },
-    { id: '5', name: 'Déménagement', icon: 'truck-delivery' as const },
-    { id: '6', name: 'Peinture', icon: 'format-paint' as const },
+const CATEGORIES = [
+    { id: '1', name: 'Ménage', icon: 'home-outline', color: '#FFF4E5' },
+    { id: '2', name: 'Plomberie', icon: 'water-outline', color: '#F0FDF4' },
+    { id: '3', name: 'Électricité', icon: 'lightning-bolt-outline', color: '#FDF2F2' },
+    { id: '4', name: 'Jardinage', icon: 'leaf-outline', color: '#FFFBEB' },
+    { id: '5', name: 'Déménagement', icon: 'truck-delivery-outline', color: '#F5F3FF' },
+    { id: '6', name: 'Peinture', icon: 'format-paint', color: '#F0FDFA' },
 ];
 
-export default function HomeScreen({ navigation }: Props) {
-    const { user } = useAppSelector((state) => state.auth);
-    const { list: services, loading } = useAppSelector((state) => state.services);
+const BY_LOCATION = [
+    {
+        id: '1',
+        title: 'Grocery shopping',
+        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
+    },
+    {
+        id: '2',
+        title: 'Grocery shopping',
+        image: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&q=80',
+    },
+];
+
+const { width } = Dimensions.get('window');
+
+const HomeScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
-
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
-    useEffect(() => {
-        fetchPopularServices();
-    }, []);
-
-    const fetchPopularServices = async () => {
-        dispatch(setServicesLoading(true));
-        try {
-            const response = await axios.get(`${API_URL}/api/services`);
-            dispatch(setServicesList(response.data));
-        } catch (error: any) {
-            dispatch(setServicesError(error.message));
-        } finally {
-            dispatch(setServicesLoading(false));
-        }
-    };
-
-    const renderCategory = ({ item }: { item: typeof categories[0] }) => (
-        <TouchableOpacity
-            style={styles.categoryItem}
-            onPress={() => navigation.navigate('Search', { category: item.name })}
-        >
-            <View style={styles.categoryIconContainer}>
-                <MaterialCommunityIcons name={item.icon} size={32} color="#2e64e5" />
-            </View>
-            <Text style={styles.categoryText}>{item.name}</Text>
-        </TouchableOpacity>
-    );
-
-    const renderServiceItem = ({ item }: { item: Service }) => (
-        <TouchableOpacity
-            style={styles.serviceCard}
-            onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
-        >
-            <Image
-                source={{ uri: 'https://via.placeholder.com/150' }}
-                style={styles.serviceImage}
-            />
-            <View style={styles.serviceInfo}>
-                <Text style={styles.serviceName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.servicePrice}>À partir de {item.basePrice} Dhs</Text>
-                <View style={styles.ratingContainer}>
-                    <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-                    <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.greeting}>Bonjour, {user?.firstName || 'Utilisateur'}</Text>
-                <Text style={styles.subGreeting}>De quel service avez-vous besoin aujourd'hui ?</Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.searchBar}
-                onPress={() => navigation.navigate('Search')}
-            >
-                <MaterialCommunityIcons name="magnify" size={24} color="#888" />
-                <Text style={styles.searchText}>Rechercher un service...</Text>
-            </TouchableOpacity>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Catégories</Text>
-                <FlatList
-                    data={categories}
-                    renderItem={renderCategory}
-                    keyExtractor={(item) => item.id}
-                    numColumns={3}
-                    scrollEnabled={false}
-                    columnWrapperStyle={styles.categoryRow}
-                />
-            </View>
-
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Services populaires</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Search')}>
-                        <Text style={styles.seeAll}>Voir tout</Text>
+        <SafeAreaView style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <View style={styles.locationContainer}>
+                        <View style={styles.locationIcon}>
+                            <MaterialCommunityIcons name="map-marker-outline" size={20} color={theme.colors.text.primary} />
+                        </View>
+                        <View>
+                            <Text style={styles.locationLabel}>Location</Text>
+                            <Text style={styles.locationText}>Chaoyang District</Text>
+                        </View>
+                    </View>
+                    <TouchableOpacity style={styles.notificationBtn}>
+                        <MaterialCommunityIcons name="bell-outline" size={24} color={theme.colors.text.primary} />
+                        <View style={styles.notificationDot} />
                     </TouchableOpacity>
                 </View>
 
-                {loading ? (
-                    <ActivityIndicator size="large" color="#2e64e5" style={{ marginTop: 20 }} />
-                ) : (
-                    <FlatList
-                        data={services.slice(0, 5)} // Show only top 5
-                        renderItem={renderServiceItem}
-                        keyExtractor={(item) => item.id.toString()}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                    />
-                )}
-            </View>
-        </ScrollView>
+                {/* Title */}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>Stay Cool with Our</Text>
+                    <Text style={[styles.title, { color: theme.colors.text.muted }]}>Collections.</Text>
+                </View>
+
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                    <View style={styles.searchBar}>
+                        <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.text.muted} />
+                        <TextInput
+                            placeholder="Gongcheng 24 -Hour"
+                            style={styles.searchInput}
+                            placeholderTextColor={theme.colors.text.muted}
+                        />
+                        <TouchableOpacity style={styles.filterBtn}>
+                            <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.text.primary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Categories */}
+                <View style={styles.categoriesGrid}>
+                    {CATEGORIES.map((category) => (
+                        <TouchableOpacity
+                            key={category.id}
+                            style={styles.categoryItem}
+                            onPress={() => {
+                                dispatch(setServicesFilters({ category: category.name }));
+                                navigation.navigate('BottomTabs', { screen: 'Search' } as any);
+                            }}
+                        >
+                            <View style={[styles.categoryIconBox, { backgroundColor: category.color }]}>
+                                <MaterialCommunityIcons name={category.icon as any} size={30} color={theme.colors.secondary} />
+                            </View>
+                            <Text style={styles.categoryName}>{category.name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* By Location Section */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>By location</Text>
+                    <TouchableOpacity>
+                        <Text style={styles.seeAll}>See All</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.locationList}
+                >
+                    {BY_LOCATION.map((item) => (
+                        <View key={item.id} style={styles.locationCard}>
+                            <Image source={{ uri: item.image }} style={styles.locationImage} />
+                            <View style={styles.locationInfo}>
+                                <Text style={styles.locationCardTitle}>{item.title}</Text>
+                            </View>
+                        </View>
+                    ))}
+                </ScrollView>
+
+                <View style={{ height: 100 }} />
+            </ScrollView>
+        </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f9f9f9' },
-    header: { padding: 20, paddingTop: 60, backgroundColor: '#2e64e5' },
-    greeting: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-    subGreeting: { fontSize: 16, color: '#e0e0e0', marginTop: 5 },
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+    },
+    locationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    locationIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    locationLabel: {
+        fontSize: 12,
+        color: theme.colors.text.muted,
+    },
+    locationText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    notificationBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    notificationDot: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: theme.colors.error,
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    titleContainer: {
+        paddingHorizontal: theme.spacing.lg,
+        marginTop: theme.spacing.xl,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+        lineHeight: 40,
+    },
+    searchContainer: {
+        paddingHorizontal: theme.spacing.lg,
+        marginTop: theme.spacing.lg,
+    },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        margin: 20,
-        marginTop: -25,
-        padding: 15,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 5,
+        borderRadius: 25,
+        paddingHorizontal: theme.spacing.md,
+        height: 54,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    searchText: { marginLeft: 10, color: '#888', fontSize: 16 },
-    section: { padding: 20, paddingTop: 0 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-    sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 15 },
-    seeAll: { color: '#2e64e5', fontSize: 14, fontWeight: 'bold' },
-    categoryRow: { justifyContent: 'space-between', marginBottom: 20 },
-    categoryItem: { alignItems: 'center', width: '30%' },
-    categoryIconContainer: {
-        width: 60,
-        height: 60,
-        backgroundColor: '#e6eeff',
-        borderRadius: 30,
+    searchInput: {
+        flex: 1,
+        marginLeft: theme.spacing.sm,
+        fontSize: 15,
+        color: theme.colors.text.primary,
+    },
+    filterBtn: {
+        padding: theme.spacing.xs,
+        borderLeftWidth: 1,
+        borderLeftColor: theme.colors.border,
+        paddingLeft: 12,
+        marginLeft: 8,
+    },
+    categoriesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.xl,
+        justifyContent: 'space-between',
+    },
+    categoryItem: {
+        width: '30%',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xl,
+    },
+    categoryIconBox: {
+        width: 85,
+        height: 85,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: theme.spacing.sm,
     },
-    categoryText: { fontSize: 12, color: '#333', textAlign: 'center' },
-    horizontalList: { paddingRight: 20 },
-    serviceCard: {
-        width: 160,
+    categoryName: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        marginTop: theme.spacing.md,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
+    seeAll: {
+        fontSize: 13,
+        color: theme.colors.text.muted,
+    },
+    locationList: {
+        paddingLeft: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+    },
+    locationCard: {
+        width: width * 0.65,
+        height: 220,
+        marginRight: theme.spacing.lg,
+        borderRadius: 30,
         backgroundColor: '#fff',
-        borderRadius: 12,
-        marginRight: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 2,
         overflow: 'hidden',
-        marginBottom: 5,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
-    serviceImage: { width: '100%', height: 100 },
-    serviceInfo: { padding: 10 },
-    serviceName: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-    servicePrice: { fontSize: 13, color: '#2e64e5', fontWeight: '600', marginBottom: 4 },
-    ratingContainer: { flexDirection: 'row', alignItems: 'center' },
-    ratingText: { fontSize: 12, color: '#666', marginLeft: 4 },
+    locationImage: {
+        width: '100%',
+        height: 160,
+    },
+    locationInfo: {
+        padding: theme.spacing.md,
+    },
+    locationCardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.text.primary,
+    },
 });
+
+export default HomeScreen;
