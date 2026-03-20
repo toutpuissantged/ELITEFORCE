@@ -6,3 +6,8 @@ build/
 coverage/
 .expo/
 *.log
+backend_js
+mobile_js
+
+.pnpm-cache/
+.npm-cache/
