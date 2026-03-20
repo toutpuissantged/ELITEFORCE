@@ -6,8 +6,7 @@ import {
     TouchableOpacity,
     SafeAreaView,
     ScrollView,
-    ActivityIndicator,
-    Alert
+    ActivityIndicator
 } from 'react-native';
 import { 
     ArrowLeft, 
@@ -21,6 +20,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
 import { useStripe, CardField } from '@stripe/stripe-react-native';
 import api from '../services/api';
+import { useModal } from '../services/modalService';
 
 type Props = StackScreenProps<MainStackParamList, 'Payment'>;
 
@@ -29,10 +29,15 @@ const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false);
     const { confirmPayment } = useStripe();
     const [cardDetails, setCardDetails] = useState<any>(null);
+    const { showModal } = useModal();
 
     const handlePayment = async () => {
         if (!cardDetails?.complete) {
-            Alert.alert('Erreur', 'Veuillez saisir les détails complets de la carte');
+            showModal({
+                title: 'Détails manquants',
+                message: 'Veuillez saisir les détails complets de votre carte bancaire.',
+                type: 'warning'
+            });
             return;
         }
 
@@ -46,13 +51,26 @@ const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
             });
 
             if (error) {
-                Alert.alert('Paiement échoué', error.message);
+                showModal({
+                    title: 'Paiement échoué',
+                    message: error.message || 'Une erreur est survenue lors du paiement.',
+                    type: 'error'
+                });
             } else if (paymentIntent) {
-                navigation.navigate('Tracking', { bookingId });
+                showModal({
+                    title: 'Succès',
+                    message: 'Votre paiement a été validé avec succès !',
+                    type: 'success',
+                    onConfirm: () => navigation.navigate('Tracking', { bookingId })
+                });
             }
         } catch (error: any) {
             console.error(error);
-            Alert.alert('Erreur', error.response?.data?.message || 'Une erreur est survenue');
+            showModal({
+                title: 'Erreur Serveur',
+                message: error.response?.data?.message || 'Impossible de traiter le paiement pour le moment.',
+                type: 'error'
+            });
         } finally {
             setLoading(false);
         }

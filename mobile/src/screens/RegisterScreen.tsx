@@ -7,20 +7,27 @@ import {
     StyleSheet,
     ActivityIndicator,
     ScrollView,
-    Alert,
     SafeAreaView,
     KeyboardAvoidingView,
-    Platform,
-    StyleSheet as RNStyleSheet
+    Platform
 } from 'react-native';
 import PhoneInputField from '../components/PhoneInputField';
 import { register, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { registerForPushNotificationsAsync } from '../utils/notifications';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    ArrowLeft, 
+    User, 
+    Sms, 
+    Lock, 
+    TickCircle,
+    InfoCircle,
+    ShieldSearch
+} from 'iconsax-react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
 import { theme } from '../theme';
+import { useModal } from '../services/modalService';
 
 type Props = StackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -38,6 +45,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
     const dispatch = useAppDispatch();
+    const { showModal } = useModal();
     const { loading, error, fieldErrors } = useAppSelector((state) => state.auth);
 
     React.useEffect(() => {
@@ -49,25 +57,15 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const validateField = (name: string, value: string) => {
         let error = '';
         switch (name) {
-            case 'firstName':
-                if (!value) error = 'First name required';
-                break;
-            case 'lastName':
-                if (!value) error = 'Last name required';
-                break;
+            case 'firstName': if (!value) error = 'Prénom requis'; break;
+            case 'lastName': if (!value) error = 'Nom requis'; break;
             case 'email':
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(value)) error = 'Invalid email address';
+                if (!emailRegex.test(value)) error = 'Email invalide';
                 break;
-            case 'phone':
-                if (!value) error = 'Phone number required';
-                break;
-            case 'password':
-                if (!value) error = 'Password required';
-                break;
-            case 'confirmPassword':
-                if (value !== formData.password) error = 'Passwords do not match';
-                break;
+            case 'phone': if (!value) error = 'Téléphone requis'; break;
+            case 'password': if (!value) error = 'Mot de passe requis'; break;
+            case 'confirmPassword': if (value !== formData.password) error = 'Les mots de passe ne correspondent pas'; break;
         }
         setValidationErrors(prev => ({ ...prev, [name]: error }));
         return !error;
@@ -77,16 +75,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         const fields = ['firstName', 'lastName', 'email', 'phone', 'password', 'confirmPassword'];
         let isValid = true;
         fields.forEach(field => {
-            if (!validateField(field, (formData as any)[field])) {
-                isValid = false;
-            }
+            if (!validateField(field, (formData as any)[field])) isValid = false;
         });
-
         if (!agreeCGU) {
-            setValidationErrors(prev => ({ ...prev, cgu: 'You must accept the terms' }));
+            setValidationErrors(prev => ({ ...prev, cgu: 'Veuillez accepter les conditions' }));
             isValid = false;
         }
-
         return isValid;
     };
 
@@ -109,28 +103,30 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         if (register.rejected.match(resultAction)) {
             const payload = resultAction.payload;
             if (!Array.isArray(payload)) {
-                Alert.alert('Error', payload as string || 'Registration failed');
+                showModal({
+                    title: 'Erreur d\'inscription',
+                    message: payload as string || 'Une erreur est survenue lors de la création du compte.',
+                    type: 'error'
+                });
             }
         }
     };
 
     const handleChange = (name: string, value: string) => {
         setFormData({ ...formData, [name]: value });
-        if (name !== 'phone') {
-            validateField(name, value);
-        }
+        if (name !== 'phone') validateField(name, value);
     };
 
     const renderInput = (
         name: keyof typeof formData,
         placeholder: string,
-        icon: keyof typeof MaterialCommunityIcons.glyphMap,
+        icon: any,
         keyboardType: any = 'default',
         secureTextEntry: boolean = false
     ) => (
         <View style={styles.inputContainer}>
             <View style={[styles.inputWrapper, validationErrors[name] && styles.inputError]}>
-                <MaterialCommunityIcons name={icon} size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                {icon}
                 <TextInput
                     style={styles.input}
                     placeholder={placeholder}
@@ -154,58 +150,57 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             >
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                        <ArrowLeft size={24} color={theme.colors.text.primary} variant="Outline" />
                     </TouchableOpacity>
 
                     <View style={styles.header}>
-                        <Text style={styles.title}>Create Account</Text>
-                        <Text style={styles.subtitle}>Fill in your details to get started</Text>
+                        <Text style={styles.title}>Inscription</Text>
+                        <Text style={styles.subtitle}>Créez votre compte pour accéder aux services EliteForce</Text>
                     </View>
 
                     <View style={styles.formContainer}>
                         {error && (
                             <View style={styles.errorBanner}>
-                                <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.colors.error} />
+                                <InfoCircle size={20} color={theme.colors.error} variant="Bold" />
                                 <Text style={styles.serverErrorText}>{error}</Text>
                             </View>
                         )}
 
                         <View style={styles.row}>
                             <View style={{ flex: 1, marginRight: 8 }}>
-                                {renderInput('firstName', 'First Name', 'account-outline')}
+                                {renderInput('firstName', 'Prénom', <User size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />)}
                             </View>
                             <View style={{ flex: 1, marginLeft: 8 }}>
-                                {renderInput('lastName', 'Last Name', 'account-outline')}
+                                {renderInput('lastName', 'Nom', <User size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />)}
                             </View>
                         </View>
 
-                        {renderInput('email', 'Email Address', 'email-outline', 'email-address')}
+                        {renderInput('email', 'Adresse Email', <Sms size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />, 'email-address')}
 
                         <View style={styles.inputContainer}>
                             <PhoneInputField
                                 value={formData.phone}
-                                onChangeText={(text) => {
-                                    setFormData({ ...formData, phone: text });
-                                }}
-                                onFormattedChange={(text) => {
-                                    setFormattedPhone(text);
-                                }}
+                                onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                                onFormattedChange={(text) => setFormattedPhone(text)}
                                 error={validationErrors.phone}
                             />
                         </View>
 
-                        {renderInput('password', 'Password', 'lock-outline', 'default', true)}
-                        {renderInput('confirmPassword', 'Confirm Password', 'lock-check-outline', 'default', true)}
+                        {renderInput('password', 'Mot de passe', <Lock size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />, 'default', true)}
+                        {renderInput('confirmPassword', 'Confirmer', <ShieldSearch size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />, 'default', true)}
 
                         <TouchableOpacity
                             style={styles.checkboxContainer}
-                            onPress={() => setAgreeCGU(!agreeCGU)}
+                            onPress={() => {
+                                setAgreeCGU(!agreeCGU);
+                                if (!agreeCGU) setValidationErrors(prev => ({ ...prev, cgu: '' }));
+                            }}
                         >
                             <View style={[styles.checkbox, agreeCGU && styles.checkboxActive]}>
-                                {agreeCGU && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
+                                {agreeCGU && <TickCircle size={16} color="#fff" variant="Bold" />}
                             </View>
                             <Text style={styles.checkboxLabel}>
-                                I agree to the <Text style={styles.linkText}>Terms & Conditions</Text>
+                                J'accepte les <Text style={styles.linkText}>Conditions Générales</Text>
                             </Text>
                         </TouchableOpacity>
                         {validationErrors.cgu && <Text style={[styles.errorText, { marginBottom: 16 }]}>{validationErrors.cgu}</Text>}
@@ -218,14 +213,14 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                             {loading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.registerBtnText}>Sign Up</Text>
+                                <Text style={styles.registerBtnText}>Créer mon compte</Text>
                             )}
                         </TouchableOpacity>
 
                         <View style={styles.footer}>
-                            <Text style={styles.footerText}>Already have an account? </Text>
+                            <Text style={styles.footerText}>Déjà inscrit ? </Text>
                             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                <Text style={styles.signInText}>Sign In</Text>
+                                <Text style={styles.signInText}>Se connecter</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -238,36 +233,39 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#FFFFFF',
     },
     scrollContent: {
         flexGrow: 1,
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
-        backgroundColor: theme.colors.background,
+        paddingHorizontal: 24,
+        paddingBottom: 40,
     },
     backBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: '#fff',
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: '#F9FAFB',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     header: {
-        marginTop: 20,
-        marginBottom: 30,
+        marginTop: 24,
+        marginBottom: 32,
     },
     title: {
         fontSize: 28,
-        fontWeight: '700',
+        fontWeight: '800',
         color: theme.colors.text.primary,
         marginBottom: 8,
+        letterSpacing: -1,
     },
     subtitle: {
-        fontSize: 16,
-        color: theme.colors.text.muted,
+        fontSize: 15,
+        color: theme.colors.text.secondary,
+        lineHeight: 22,
     },
     formContainer: {
         width: '100%',
@@ -279,15 +277,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FEF2F2',
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 20,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
     },
     serverErrorText: {
         color: theme.colors.error,
         fontSize: 14,
-        marginLeft: 8,
-        fontWeight: '500',
+        marginLeft: 10,
+        fontWeight: '600',
     },
     inputContainer: {
         marginBottom: 16,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#F9FAFB',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
@@ -303,11 +303,11 @@ const styles = StyleSheet.create({
         height: 60,
     },
     inputIcon: {
-        marginRight: 10,
+        marginRight: 12,
     },
     input: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 15,
         color: theme.colors.text.primary,
     },
     inputError: {
@@ -316,32 +316,10 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: theme.colors.error,
-        fontSize: 11,
-        marginTop: 4,
+        fontSize: 12,
+        marginTop: 6,
         marginLeft: 4,
-        fontWeight: '500',
-    },
-    phoneContainer: {
-        width: '100%',
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        height: 60,
-    },
-    phoneTextContainer: {
-        backgroundColor: 'transparent',
-        paddingVertical: 0,
-        borderRadius: 16,
-    },
-    phoneInputText: {
-        fontSize: 14,
-        color: theme.colors.text.primary,
-        height: 60,
-    },
-    phoneCodeText: {
-        fontSize: 14,
-        color: theme.colors.text.primary,
+        fontWeight: '600',
     },
     checkboxContainer: {
         flexDirection: 'row',
@@ -350,17 +328,18 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     checkbox: {
-        width: 20,
-        height: 20,
-        borderRadius: 6,
+        width: 24,
+        height: 24,
+        borderRadius: 8,
         borderWidth: 2,
-        borderColor: theme.colors.primary,
-        marginRight: 10,
+        borderColor: theme.colors.borderMedium,
+        marginRight: 12,
         justifyContent: 'center',
         alignItems: 'center',
     },
     checkboxActive: {
         backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
     },
     checkboxLabel: {
         fontSize: 14,
@@ -368,35 +347,35 @@ const styles = StyleSheet.create({
     },
     linkText: {
         color: theme.colors.primary,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     registerBtn: {
         backgroundColor: theme.colors.primary,
-        height: 56,
-        borderRadius: 16,
+        height: 60,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     registerBtnDisabled: {
-        backgroundColor: theme.colors.text.muted,
+        opacity: 0.6,
     },
     registerBtnText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 32,
     },
     footerText: {
-        color: theme.colors.text.muted,
+        color: theme.colors.text.secondary,
         fontSize: 14,
     },
     signInText: {
         color: theme.colors.primary,
-        fontWeight: '700',
+        fontWeight: '800',
         fontSize: 14,
     },
 });

@@ -88,7 +88,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.header}>
                     <View style={styles.userContainer}>
                         <Image 
-                            source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80' }} 
+                            source={require('../../assets/images/profile.png')} 
                             style={styles.avatar} 
                         />
                         <View style={styles.userInfo}>

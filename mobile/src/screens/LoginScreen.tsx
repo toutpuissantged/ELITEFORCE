@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    Alert,
     SafeAreaView,
     KeyboardAvoidingView,
     Platform,
@@ -15,10 +14,19 @@ import {
 import { login, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { registerForPushNotificationsAsync } from '../utils/notifications';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    ShieldTick, 
+    Sms, 
+    Lock, 
+    Eye, 
+    EyeSlash, 
+    InfoCircle,
+    Warning2
+} from 'iconsax-react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
 import { theme } from '../theme';
+import { useModal } from '../services/modalService';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -28,6 +36,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const dispatch = useAppDispatch();
+    const { showModal } = useModal();
     const { loading, error, fieldErrors } = useAppSelector((state) => state.auth);
 
     useEffect(() => {
@@ -36,7 +45,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showModal({
+                title: 'Champs requis',
+                message: 'Veuillez remplir tous les champs pour vous connecter.',
+                type: 'warning'
+            });
             return;
         }
 
@@ -45,7 +58,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         if (login.rejected.match(resultAction)) {
             const payload = resultAction.payload;
             if (!Array.isArray(payload)) {
-                Alert.alert('Error', payload as string || 'Login failed');
+                showModal({
+                    title: 'Échec de connexion',
+                    message: payload as string || 'Identifiants invalides ou erreur serveur.',
+                    type: 'error'
+                });
             }
         }
     };
@@ -59,27 +76,27 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
                         <View style={styles.logoContainer}>
-                            <MaterialCommunityIcons name="shield-check" size={60} color={theme.colors.primary} />
+                            <ShieldTick size={48} color={theme.colors.primary} variant="Bold" />
                         </View>
-                        <Text style={styles.title}>Welcome Back</Text>
-                        <Text style={styles.subtitle}>Sign in to continue to ELITEFORCE</Text>
+                        <Text style={styles.title}>EliteForce</Text>
+                        <Text style={styles.subtitle}>Connectez-vous pour accéder à vos services de sécurité</Text>
                     </View>
 
                     <View style={styles.formContainer}>
                         {error && (
                             <View style={styles.errorBanner}>
-                                <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.colors.error} />
+                                <InfoCircle size={20} color={theme.colors.error} variant="Bold" />
                                 <Text style={styles.errorText}>{error}</Text>
                             </View>
                         )}
 
                         <View style={styles.inputContainer}>
-                            <Text style={styles.inputLabel}>Email Address</Text>
+                            <Text style={styles.inputLabel}>Adresse Email</Text>
                             <View style={styles.inputWrapper}>
-                                <MaterialCommunityIcons name="email-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                                <Sms size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="your@email.com"
+                                    placeholder="votre@email.com"
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                     value={email}
@@ -91,9 +108,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                         </View>
 
                         <View style={styles.inputContainer}>
-                            <Text style={styles.inputLabel}>Password</Text>
+                            <Text style={styles.inputLabel}>Mot de passe</Text>
                             <View style={styles.inputWrapper}>
-                                <MaterialCommunityIcons name="lock-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                                <Lock size={20} color={theme.colors.text.muted} variant="Outline" style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="••••••••"
@@ -103,7 +120,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                     placeholderTextColor={theme.colors.text.muted}
                                 />
                                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                                    <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.colors.text.muted} />
+                                    {showPassword ? 
+                                        <EyeSlash size={20} color={theme.colors.text.muted} variant="Outline" /> : 
+                                        <Eye size={20} color={theme.colors.text.muted} variant="Outline" />
+                                    }
                                 </TouchableOpacity>
                             </View>
                             {fieldErrors && fieldErrors.password && <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>}
@@ -113,7 +133,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                             onPress={() => navigation.navigate('ForgotPassword')}
                             style={styles.forgotBtn}
                         >
-                            <Text style={styles.forgotText}>Forgot Password?</Text>
+                            <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -124,14 +144,14 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                             {loading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.loginBtnText}>Sign In</Text>
+                                <Text style={styles.loginBtnText}>Se connecter</Text>
                             )}
                         </TouchableOpacity>
 
                         <View style={styles.footer}>
-                            <Text style={styles.footerText}>Don't have an account? </Text>
+                            <Text style={styles.footerText}>Pas encore de compte ? </Text>
                             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                                <Text style={styles.signUpText}>Sign Up</Text>
+                                <Text style={styles.signUpText}>S'inscrire</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -144,36 +164,42 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#FFFFFF',
     },
     scrollContent: {
         flexGrow: 1,
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
+        paddingHorizontal: 24,
+        paddingBottom: 40,
     },
     header: {
-        alignItems: 'flex-start',
-        marginTop: 60,
+        alignItems: 'center',
+        marginTop: 80,
         marginBottom: 48,
     },
     logoContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 16,
-        backgroundColor: '#fff',
+        width: 80,
+        height: 80,
+        borderRadius: 24,
+        backgroundColor: '#F9FAFB',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     title: {
         fontSize: 28,
-        fontWeight: '700',
+        fontWeight: '800',
         color: theme.colors.text.primary,
         marginBottom: 8,
+        letterSpacing: -1,
     },
     subtitle: {
-        fontSize: 16,
-        color: theme.colors.text.muted,
+        fontSize: 15,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        paddingHorizontal: 20,
+        lineHeight: 22,
     },
     formContainer: {
         width: '100%',
@@ -182,22 +208,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FEF2F2',
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 20,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
     },
     errorText: {
         color: theme.colors.error,
         fontSize: 14,
-        marginLeft: 8,
-        fontWeight: '500',
+        marginLeft: 10,
+        fontWeight: '600',
     },
     inputContainer: {
         marginBottom: 20,
     },
     inputLabel: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
         color: theme.colors.text.primary,
         marginBottom: 8,
         marginLeft: 4,
@@ -205,7 +233,7 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#F9FAFB',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
@@ -217,56 +245,56 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 15,
         color: theme.colors.text.primary,
     },
     eyeBtn: {
-        padding: 5,
+        padding: 8,
     },
     forgotBtn: {
         alignSelf: 'flex-end',
-        marginBottom: 24,
+        marginBottom: 32,
     },
     forgotText: {
         color: theme.colors.primary,
-        fontWeight: '600',
+        fontWeight: '700',
         fontSize: 14,
     },
     loginBtn: {
         backgroundColor: theme.colors.primary,
-        height: 56,
-        borderRadius: 16,
+        height: 60,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     loginBtnDisabled: {
-        backgroundColor: theme.colors.text.muted,
+        opacity: 0.6,
     },
     loginBtnText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 32,
     },
     footerText: {
-        color: theme.colors.text.muted,
+        color: theme.colors.text.secondary,
         fontSize: 14,
     },
     signUpText: {
         color: theme.colors.primary,
-        fontWeight: '700',
+        fontWeight: '800',
         fontSize: 14,
     },
     fieldErrorText: {
         color: theme.colors.error,
         fontSize: 12,
-        marginTop: 4,
+        marginTop: 6,
         marginLeft: 4,
-        fontWeight: '500',
+        fontWeight: '600',
     },
 });
 

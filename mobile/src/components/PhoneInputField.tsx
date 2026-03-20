@@ -10,7 +10,7 @@ import {
     SafeAreaView
 } from 'react-native';
 import { theme } from '../theme';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ArrowDown2, CloseCircle } from 'iconsax-react-native';
 
 interface Country {
     code: string;
@@ -19,11 +19,11 @@ interface Country {
 }
 
 const COUNTRIES: Country[] = [
-    { code: '+212', flag: '🇲🇦', name: 'Morocco' },
+    { code: '+212', flag: '🇲🇦', name: 'Maroc' },
     { code: '+33', flag: '🇫🇷', name: 'France' },
-    { code: '+1', flag: '🇺🇸', name: 'United States' },
-    { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
-    { code: '+971', flag: '🇦🇪', name: 'United Arab Emirates' },
+    { code: '+1', flag: '🇺🇸', name: 'USA' },
+    { code: '+44', flag: '🇬🇧', name: 'UK' },
+    { code: '+971', flag: '🇦🇪', name: 'UAE' },
 ];
 
 interface Props {
@@ -50,39 +50,40 @@ const PhoneInputField: React.FC<Props> = ({ value, onChangeText, onFormattedChan
 
     return (
         <View style={styles.container}>
-            <View style={[styles.inputWrapper, error && styles.inputError]}>
+            <View style={[styles.inputWrapper, error ? styles.inputError : null]}>
                 <TouchableOpacity
                     style={styles.countryPicker}
                     onPress={() => setShowPicker(true)}
                 >
                     <Text style={styles.flag}>{selectedCountry.flag}</Text>
                     <Text style={styles.countryCode}>{selectedCountry.code}</Text>
-                    <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.text.muted} />
+                    <ArrowDown2 size={16} color={theme.colors.text.muted} variant="Outline" />
                 </TouchableOpacity>
 
                 <View style={styles.divider} />
 
                 <TextInput
                     style={styles.input}
-                    placeholder="Phone Number"
+                    placeholder="Numéro de téléphone"
                     keyboardType="phone-pad"
                     value={value}
                     onChangeText={handleTextChange}
                     placeholderTextColor={theme.colors.text.muted}
                 />
             </View>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Modal
                 visible={showPicker}
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
             >
-                <SafeAreaView style={styles.modalOverlay}>
+                <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Country</Text>
+                            <Text style={styles.modalTitle}>Pays</Text>
                             <TouchableOpacity onPress={() => setShowPicker(false)}>
-                                <MaterialCommunityIcons name="close" size={24} color={theme.colors.text.primary} />
+                                <CloseCircle size={24} color={theme.colors.text.primary} variant="Outline" />
                             </TouchableOpacity>
                         </View>
                         <FlatList
@@ -100,7 +101,7 @@ const PhoneInputField: React.FC<Props> = ({ value, onChangeText, onFormattedChan
                             )}
                         />
                     </View>
-                </SafeAreaView>
+                </View>
             </Modal>
         </View>
     );
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#F9FAFB',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: theme.colors.border,
@@ -122,6 +123,7 @@ const styles = StyleSheet.create({
     },
     inputError: {
         borderColor: theme.colors.error,
+        backgroundColor: '#FFF5F5',
     },
     countryPicker: {
         flexDirection: 'row',
@@ -133,33 +135,43 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     countryCode: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '700',
         color: theme.colors.text.primary,
         marginRight: 4,
     },
     divider: {
         width: 1,
         height: 24,
-        backgroundColor: theme.colors.border,
+        backgroundColor: theme.colors.borderMedium,
         marginHorizontal: 12,
     },
     input: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 15,
         color: theme.colors.text.primary,
+    },
+    errorText: {
+        color: theme.colors.error,
+        fontSize: 12,
+        marginTop: 6,
+        marginLeft: 4,
+        fontWeight: '600',
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
     },
     modalContent: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        maxHeight: '80%',
-        paddingBottom: 40,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        width: '100%',
+        maxHeight: '60%',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -170,8 +182,8 @@ const styles = StyleSheet.create({
         borderBottomColor: theme.colors.border,
     },
     modalTitle: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 18,
+        fontWeight: '800',
         color: theme.colors.text.primary,
     },
     countryItem: {
@@ -179,7 +191,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
+        borderBottomColor: '#F9FAFB',
     },
     itemFlag: {
         fontSize: 24,
@@ -187,13 +199,14 @@ const styles = StyleSheet.create({
     },
     itemName: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 15,
         color: theme.colors.text.primary,
+        fontWeight: '600',
     },
     itemCode: {
-        fontSize: 16,
+        fontSize: 14,
         color: theme.colors.text.muted,
-        fontWeight: '600',
+        fontWeight: '700',
     },
 });
 

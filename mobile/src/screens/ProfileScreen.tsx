@@ -7,7 +7,6 @@ import {
     Image,
     ScrollView,
     SafeAreaView,
-    Alert,
     Dimensions
 } from 'react-native';
 import { 
@@ -24,6 +23,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { logout } from '../store/authSlice';
 import { theme } from '../theme';
+import { useModal } from '../services/modalService';
 
 const { width } = Dimensions.get('window');
 
@@ -31,22 +31,18 @@ const ProfileScreen = () => {
     const { user } = useAppSelector((state) => state.auth);
     const { list: bookings } = useAppSelector((state) => state.bookings);
     const dispatch = useAppDispatch();
+    const { showModal } = useModal();
 
-    const handleLogout = async () => {
-        Alert.alert(
-            'Déconnexion',
-            'Êtes-vous sûr de vouloir vous déconnecter ?',
-            [
-                { text: 'Annuler', style: 'cancel' },
-                {
-                    text: 'Déconnexion',
-                    style: 'destructive',
-                    onPress: () => {
-                        dispatch(logout());
-                    },
-                },
-            ]
-        );
+    const handleLogout = () => {
+        showModal({
+            title: 'Déconnexion',
+            message: 'Êtes-vous sûr de vouloir vous déconnecter de votre compte EliteForce ?',
+            type: 'confirm',
+            confirmText: 'Déconnexion',
+            onConfirm: () => {
+                dispatch(logout());
+            }
+        });
     };
 
     const MENU_ITEMS = [
@@ -63,11 +59,11 @@ const ProfileScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header Profile - Flat */}
+                {/* Header Profile - Using local profile image */}
                 <View style={styles.header}>
                     <View style={styles.profileImageContainer}>
                         <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80' }}
+                            source={require('../../assets/images/profile.png')}
                             style={styles.profileImage}
                         />
                         <TouchableOpacity style={styles.editBtn}>
@@ -78,7 +74,7 @@ const ProfileScreen = () => {
                     <Text style={styles.userEmail}>{user?.email}</Text>
                 </View>
 
-                {/* Stats Section - Minimalist horizontal list */}
+                {/* Stats Section */}
                 <View style={styles.statsRow}>
                     <View style={styles.statBox}>
                         <Text style={styles.statValue}>{bookings.length}</Text>
@@ -118,7 +114,7 @@ const ProfileScreen = () => {
                     </View>
                 </View>
 
-                {/* Logout Button - Minimalist ghost style */}
+                {/* Logout Button */}
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
                     <Logout size={22} color="#EF4444" variant="Outline" />
                     <Text style={styles.logoutText}>Se déconnecter</Text>

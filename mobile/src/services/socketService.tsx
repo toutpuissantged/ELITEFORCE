@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAppSelector } from '../hooks/store';
 import { io, Socket } from 'socket.io-client';
-import { Alert } from 'react-native';
 import { SOCKET_URL } from '../config';
+import { useModal } from './modalService';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -25,6 +25,7 @@ interface SocketProviderProps {
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const { token, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { showModal } = useModal();
 
   useEffect(() => {
     let newSocket: Socket | null = null;
@@ -47,12 +48,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         console.error('Socket connection error:', error);
       });
 
-      // Global listeners for real-time events can be added here or in specific components
       newSocket.on('mission-completed', (data: { bookingId: number | string }) => {
-        Alert.alert(
-          'Mission terminée',
-          `La mission pour la réservation #${data.bookingId} est terminée. N'oubliez pas de noter votre prestataire !`
-        );
+        showModal({
+          title: 'Mission terminée',
+          message: `La mission pour la réservation #${data.bookingId} est terminée. N'oubliez pas de noter votre prestataire !`,
+          type: 'success'
+        });
       });
 
       setSocket(newSocket);
@@ -63,7 +64,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         newSocket.disconnect();
       }
     };
-  }, [isAuthenticated, token, SOCKET_URL]);
+  }, [isAuthenticated, token, SOCKET_URL, showModal]);
 
   const joinBookingRoom = (bookingId: number | string) => {
     if (socket) {

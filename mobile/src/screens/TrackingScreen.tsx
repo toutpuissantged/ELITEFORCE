@@ -7,7 +7,6 @@ import {
     SafeAreaView,
     Image,
     ScrollView,
-    Alert,
     Dimensions,
     ActivityIndicator,
 } from 'react-native';
@@ -29,6 +28,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { fetchBookingById } from '../store/bookingSlice';
 import { BookingStatus } from '../types';
 import { SOCKET_URL } from '../config';
+import { useModal } from '../services/modalService';
 
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
@@ -43,6 +43,7 @@ const { width } = Dimensions.get('window');
 
 const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const dispatch = useAppDispatch();
+    const { showModal } = useModal();
     const { bookingId } = route.params;
     const { list: bookings, loading } = useAppSelector(state => state.bookings);
     const booking = bookings.find(b => b.id === bookingId);
@@ -95,14 +96,18 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         });
 
         socket.on('mission-completed', () => {
-            Alert.alert('Succès', 'Votre prestation est terminée !');
-            navigation.navigate('BottomTabs', { screen: 'Bookings' } as any);
+            showModal({
+                title: 'Mission Terminée',
+                message: 'Votre prestation EliteForce est terminée. Merci de nous avoir fait confiance !',
+                type: 'success',
+                onConfirm: () => navigation.navigate('BottomTabs', { screen: 'Bookings' } as any)
+            });
         });
 
         return () => {
             socket.disconnect();
         };
-    }, [bookingId, token, updateTimeline]);
+    }, [bookingId, token, updateTimeline, showModal, navigation]);
 
     if (loading && !booking) {
         return (
@@ -126,7 +131,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Map Section - Minimal flat layout */}
+                {/* Map Section */}
                 <View style={styles.mapWrapper}>
                     <MapView
                         provider={PROVIDER_GOOGLE}
@@ -150,7 +155,6 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
 
                 {/* Content Panel */}
                 <View style={styles.content}>
-                    {/* Provider Info Card */}
                     <View style={styles.providerCard}>
                         <Image
                             source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&q=80' }}
@@ -170,7 +174,6 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Timeline Section */}
                     <View style={styles.timelineHeader}>
                         <InfoCircle size={20} color={theme.colors.text.primary} variant="Outline" />
                         <Text style={styles.sectionTitle}>Progression</Text>

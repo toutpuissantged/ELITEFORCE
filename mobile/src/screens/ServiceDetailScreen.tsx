@@ -9,8 +9,7 @@ import {
     SafeAreaView,
     Dimensions,
     ActivityIndicator,
-    TextInput,
-    Alert
+    TextInput
 } from 'react-native';
 import { 
     ArrowLeft, 
@@ -27,6 +26,7 @@ import { MainStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { fetchServiceById } from '../store/servicesSlice';
 import { createBooking } from '../store/bookingSlice';
+import { useModal } from '../services/modalService';
 
 type Props = StackScreenProps<MainStackParamList, 'ServiceDetail'>;
 
@@ -35,6 +35,7 @@ const { width } = Dimensions.get('window');
 const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const { serviceId } = route.params;
     const dispatch = useAppDispatch();
+    const { showModal } = useModal();
     const { list: services, loading: servicesLoading } = useAppSelector((state) => state.services);
     const service = services.find(s => s.id === serviceId);
     const { loading: bookingLoading } = useAppSelector((state) => state.bookings);
@@ -52,7 +53,11 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     const handleBooking = async () => {
         if (!address) {
-            Alert.alert('Erreur', 'Veuillez saisir une adresse pour la prestation.');
+            showModal({
+                title: 'Champ requis',
+                message: 'Veuillez saisir une adresse pour la prestation.',
+                type: 'warning'
+            });
             return;
         }
 
@@ -70,7 +75,11 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 serviceName: service?.name || 'Service'
             });
         } else {
-            Alert.alert('Erreur', resultAction.payload as string || 'Erreur lors de la réservation');
+            showModal({
+                title: 'Erreur',
+                message: resultAction.payload as string || 'Erreur lors de la réservation',
+                type: 'error'
+            });
         }
     };
 
