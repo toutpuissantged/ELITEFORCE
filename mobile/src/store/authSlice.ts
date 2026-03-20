@@ -1,5 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../types';
+import api from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
     user: User | null;
@@ -17,36 +19,113 @@ const initialState: AuthState = {
     error: null,
 };
 
+// Async Thunks
+export const login = createAsyncThunk(
+    'auth/login',
+    async (credentials: any, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/auth/login', credentials);
+            await AsyncStorage.setItem('token', response.data.token);
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Login failed');
+        }
+    }
+);
+
+export const register = createAsyncThunk(
+    'auth/register',
+    async (userData: any, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/auth/register', userData);
+            await AsyncStorage.setItem('token', response.data.token);
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Registration failed');
+        }
+    }
+);
+
+export const fetchMe = createAsyncThunk(
+    'auth/fetchMe',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/auth/me');
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch user');
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        setLoading: (state, action: PayloadAction<boolean>) => {
-            state.loading = action.payload;
-        },
-        setError: (state, action: PayloadAction<string | null>) => {
-            state.error = action.payload;
-            state.loading = false;
-        },
-        setUser: (state, action: PayloadAction<User | null>) => {
-            state.user = action.payload;
-        },
         setToken: (state, action: PayloadAction<string | null>) => {
             state.token = action.payload;
             state.isAuthenticated = !!action.payload;
-            state.loading = false;
-            state.error = null;
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            state.loading = false;
-            state.error = null;
+            AsyncStorage.removeItem('token');
         },
+        clearError: (state) => {
+            state.error = null;
+        }
+    },
+    extraReducers: (builder) => {
+        builder
+            // Login
+            .addCase(login.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(login.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                state.isAuthenticated = true;
+            })
+            .addCase(login.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Register
+            .addCase(register.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(register.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                state.isAuthenticated = true;
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Fetch Me
+            .addCase(fetchMe.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchMe.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+                state.isAuthenticated = true;
+            })
+            .addCase(fetchMe.rejected, (state) => {
+                state.loading = false;
+                state.isAuthenticated = false;
+                state.token = null;
+                state.user = null;
+            });
     },
 });
 
-export const { setLoading, setError, setUser, setToken, logout } = authSlice.actions;
+export const { setToken, logout, clearError } = authSlice.actions;
 
 export default authSlice.reducer;

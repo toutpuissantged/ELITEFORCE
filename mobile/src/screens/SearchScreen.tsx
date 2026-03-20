@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -17,8 +17,7 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
-import { setServicesFilters, setServicesLoading, setServicesError, setServicesList } from '../store/servicesSlice';
-import axios from 'axios';
+import { setServicesFilters, fetchServices } from '../store/servicesSlice';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -33,43 +32,26 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     const [searchQuery, setSearchQuery] = useState(filters.search);
     const [refreshing, setRefreshing] = useState(false);
 
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch(setServicesFilters({ search: searchQuery }));
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [searchQuery, dispatch]);
 
-    const fetchServices = async () => {
-        dispatch(setServicesLoading(true));
-        try {
-            const params = new URLSearchParams();
-            if (filters.search) params.append('search', filters.search);
-            if (filters.category && filters.category !== 'All') params.append('category', filters.category);
-            if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
-            if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-            if (filters.rating) params.append('rating', filters.rating.toString());
-
-            const response = await axios.get(`${API_URL}/api/services?${params.toString()}`);
-            dispatch(setServicesList(response.data));
-        } catch (error) {
-            dispatch(setServicesError('Failed to load services'));
-        } finally {
-            dispatch(setServicesLoading(false));
-            setRefreshing(false);
-        }
-    };
+    const loadServices = useCallback(async () => {
+        await dispatch(fetchServices(filters));
+        setRefreshing(false);
+    }, [dispatch, filters]);
 
     useEffect(() => {
-        fetchServices();
-    }, [filters]);
+        loadServices();
+    }, [loadServices]);
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchServices();
+        loadServices();
     };
 
     return (

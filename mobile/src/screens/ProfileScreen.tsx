@@ -67,17 +67,17 @@ const ProfileScreen = () => {
                 {/* Stats */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>12</Text>
+                        <Text style={styles.statValue}>-</Text>
                         <Text style={styles.statLabel}>Orders</Text>
                     </View>
                     <View style={styles.statDivider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>$420</Text>
+                        <Text style={styles.statValue}>-</Text>
                         <Text style={styles.statLabel}>Spent</Text>
                     </View>
                     <View style={styles.statDivider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>5</Text>
+                        <Text style={styles.statValue}>-</Text>
                         <Text style={styles.statLabel}>Reviews</Text>
                     </View>
                 </View>

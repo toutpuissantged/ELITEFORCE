@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -6,7 +6,9 @@ import {
     FlatList,
     TouchableOpacity,
     SafeAreaView,
-    Image
+    Image,
+    ActivityIndicator,
+    RefreshControl
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -14,39 +16,36 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { fetchMyBookings } from '../store/bookingSlice';
+import { BookingStatus } from '../types';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
     StackScreenProps<MainStackParamList>
 >;
 
-const BOOKINGS = [
-    {
-        id: '1',
-        service: 'Grocery Delivery',
-        date: 'Oct 24, 2023',
-        time: '10:30 AM',
-        status: 'In Progress',
-        price: '45.00',
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80',
-    },
-    {
-        id: '2',
-        service: 'Pharmacy Pick-up',
-        date: 'Oct 22, 2023',
-        time: '02:15 PM',
-        status: 'Completed',
-        price: '12.50',
-        image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=400&q=80',
-    },
-];
-
 const BookingsScreen: React.FC<Props> = ({ navigation }) => {
-    const getStatusStyle = (status: string) => {
+    const dispatch = useAppDispatch();
+    const { list: bookings, loading } = useAppSelector((state) => state.bookings);
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        dispatch(fetchMyBookings());
+    }, [dispatch]);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await dispatch(fetchMyBookings());
+        setRefreshing(false);
+    };
+
+    const getStatusStyle = (status: BookingStatus) => {
         switch (status) {
-            case 'In Progress': return { bg: '#E0F2FE', text: '#0369A1' };
-            case 'Completed': return { bg: '#F0FDF4', text: '#15803D' };
-            case 'Cancelled': return { bg: '#FEF2F2', text: '#B91C1C' };
+            case BookingStatus.IN_PROGRESS: return { bg: '#E0F2FE', text: '#0369A1' };
+            case BookingStatus.COMPLETED: return { bg: '#F0FDF4', text: '#15803D' };
+            case BookingStatus.CANCELLED: return { bg: '#FEF2F2', text: '#B91C1C' };
+            case BookingStatus.CONFIRMED: return { bg: '#F5F3FF', text: '#6D28D9' };
             default: return { bg: '#F3F4F6', text: '#4B5563' };
         }
     };
@@ -57,55 +56,69 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.title}>My Bookings</Text>
             </View>
 
-            <FlatList
-                data={BOOKINGS}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                renderItem={({ item }) => {
-                    const statusStyle = getStatusStyle(item.status);
-                    return (
-                        <TouchableOpacity
-                            style={styles.bookingCard}
-                            onPress={() => item.status === 'In Progress' && navigation.navigate('Tracking', { bookingId: parseInt(item.id) })}
-                        >
-                            <View style={styles.cardHeader}>
-                                <Image source={{ uri: item.image }} style={styles.serviceImage} />
-                                <View style={styles.mainInfo}>
-                                    <Text style={styles.serviceName}>{item.service}</Text>
-                                    <View style={styles.dateTimeRow}>
-                                        <MaterialCommunityIcons name="calendar-outline" size={14} color={theme.colors.text.muted} />
-                                        <Text style={styles.dateTimeText}>{item.date} • {item.time}</Text>
+            {loading && !refreshing && bookings.length === 0 ? (
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={bookings}
+                    keyExtractor={(item) => item.id.toString()}
+                    contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                    }
+                    renderItem={({ item }) => {
+                        const statusStyle = getStatusStyle(item.status);
+                        return (
+                            <TouchableOpacity
+                                style={styles.bookingCard}
+                                onPress={() => [BookingStatus.IN_PROGRESS, BookingStatus.CONFIRMED].includes(item.status) && navigation.navigate('Tracking', { bookingId: item.id })}
+                            >
+                                <View style={styles.cardHeader}>
+                                    <Image
+                                        source={{ uri: item.service?.name ? `https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80` : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80' }}
+                                        style={styles.serviceImage}
+                                    />
+                                    <View style={styles.mainInfo}>
+                                        <Text style={styles.serviceName}>{item.service?.name || 'Service Unnamed'}</Text>
+                                        <View style={styles.dateTimeRow}>
+                                            <MaterialCommunityIcons name="calendar-outline" size={14} color={theme.colors.text.muted} />
+                                            <Text style={styles.dateTimeText}>
+                                                {new Date(item.scheduledAt).toLocaleDateString()} • {new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
                                     </View>
                                 </View>
-                                <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                                    <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
-                                </View>
-                            </View>
 
-                            <View style={styles.divider} />
+                                <View style={styles.divider} />
 
-                            <View style={styles.cardFooter}>
-                                <View style={styles.priceContainer}>
-                                    <Text style={styles.priceLabel}>Total Price</Text>
-                                    <Text style={styles.priceValue}>$ {item.price}</Text>
+                                <View style={styles.cardFooter}>
+                                    <View style={styles.priceContainer}>
+                                        <Text style={styles.priceLabel}>Total Price</Text>
+                                        <Text style={styles.priceValue}>$ {item.totalPrice}</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.detailsBtn}
+                                        onPress={() => { }}
+                                    >
+                                        <Text style={styles.detailsBtnText}>View Details</Text>
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.detailsBtn}
-                                    onPress={() => { }}
-                                >
-                                    <Text style={styles.detailsBtnText}>View Details</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                }}
-                ListEmptyComponent={() => (
-                    <View style={styles.emptyContainer}>
-                        <MaterialCommunityIcons name="calendar-blank" size={60} color={theme.colors.text.muted} />
-                        <Text style={styles.emptyText}>No bookings yet</Text>
-                    </View>
-                )}
-            />
+                            </TouchableOpacity>
+                        );
+                    }}
+                    ListEmptyComponent={() => (
+                        <View style={styles.emptyContainer}>
+                            <MaterialCommunityIcons name="calendar-blank" size={60} color={theme.colors.text.muted} />
+                            <Text style={styles.emptyText}>No bookings yet</Text>
+                        </View>
+                    )}
+                />
+            )}
         </SafeAreaView>
     );
 };
@@ -217,6 +230,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: theme.colors.text.muted,
         marginTop: 16,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

@@ -14,14 +14,12 @@ import {
     StyleSheet as RNStyleSheet
 } from 'react-native';
 import PhoneInputField from '../components/PhoneInputField';
-import { setUser, setToken, setLoading, setError } from '../store/authSlice';
+import { register, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
 import { theme } from '../theme';
-import axios from 'axios';
 
 type Props = StackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -40,8 +38,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     const dispatch = useAppDispatch();
     const { loading, error } = useAppSelector((state) => state.auth);
-
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
 
     const validateField = (name: string, value: string) => {
         let error = '';
@@ -90,29 +86,18 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const handleRegister = async () => {
         if (!validate()) return;
 
-        dispatch(setLoading(true));
-        dispatch(setError(null));
+        const resultAction = await dispatch(register({
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formattedPhone || formData.phone,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword,
+            acceptTerms: agreeCGU,
+        }));
 
-        try {
-            const response = await axios.post(`${API_URL}/api/auth/register`, {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                phone: formattedPhone || formData.phone,
-                password: formData.password,
-            });
-
-            const { user, token } = response.data;
-
-            await AsyncStorage.setItem('token', token);
-            dispatch(setToken(token));
-            dispatch(setUser(user));
-        } catch (err: any) {
-            const errorMsg = err.response?.data?.message || 'Registration failed';
-            dispatch(setError(errorMsg));
-            Alert.alert('Error', errorMsg);
-        } finally {
-            dispatch(setLoading(false));
+        if (register.rejected.match(resultAction)) {
+            Alert.alert('Error', resultAction.payload as string || 'Registration failed');
         }
     };
 

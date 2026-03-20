@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,8 @@ import {
     TextInput,
     Image,
     SafeAreaView,
-    Dimensions
+    Dimensions,
+    ActivityIndicator
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -16,8 +17,8 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { StackScreenProps } from '@react-navigation/stack';
 import { BottomTabParamList, MainStackParamList } from '../types/navigation';
-import { useAppDispatch } from '../hooks/store';
-import { setServicesFilters } from '../store/servicesSlice';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { setServicesFilters, fetchServices } from '../store/servicesSlice';
 
 type Props = CompositeScreenProps<
     BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -33,23 +34,16 @@ const CATEGORIES = [
     { id: '6', name: 'Peinture', icon: 'format-paint', color: '#F0FDFA' },
 ];
 
-const BY_LOCATION = [
-    {
-        id: '1',
-        title: 'Grocery shopping',
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
-    },
-    {
-        id: '2',
-        title: 'Grocery shopping',
-        image: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&q=80',
-    },
-];
-
 const { width } = Dimensions.get('window');
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
+    const { list, loading } = useAppSelector((state) => state.services);
+
+    useEffect(() => {
+        dispatch(fetchServices({}));
+    }, [dispatch]);
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -78,17 +72,18 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
-                    <View style={styles.searchBar}>
+                    <TouchableOpacity
+                        style={styles.searchBar}
+                        onPress={() => navigation.navigate('BottomTabs', { screen: 'Search' } as any)}
+                    >
                         <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.text.muted} />
-                        <TextInput
-                            placeholder="Gongcheng 24 -Hour"
-                            style={styles.searchInput}
-                            placeholderTextColor={theme.colors.text.muted}
-                        />
-                        <TouchableOpacity style={styles.filterBtn}>
+                        <Text style={[styles.searchInput, { color: theme.colors.text.muted, marginTop: 14 }]}>
+                            Search for services...
+                        </Text>
+                        <View style={styles.filterBtn}>
                             <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.text.primary} />
-                        </TouchableOpacity>
-                    </View>
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Categories */}
@@ -110,28 +105,40 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                     ))}
                 </View>
 
-                {/* By Location Section */}
+                {/* Recommended Services Section */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>By location</Text>
-                    <TouchableOpacity>
+                    <Text style={styles.sectionTitle}>Recommended</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('BottomTabs', { screen: 'Search' } as any)}>
                         <Text style={styles.seeAll}>See All</Text>
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.locationList}
-                >
-                    {BY_LOCATION.map((item) => (
-                        <View key={item.id} style={styles.locationCard}>
-                            <Image source={{ uri: item.image }} style={styles.locationImage} />
-                            <View style={styles.locationInfo}>
-                                <Text style={styles.locationCardTitle}>{item.title}</Text>
-                            </View>
-                        </View>
-                    ))}
-                </ScrollView>
+                {loading ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginTop: 20 }} />
+                ) : (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.locationList}
+                    >
+                        {list.slice(0, 5).map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.locationCard}
+                                onPress={() => navigation.navigate('ProductDetail', { productId: item.id.toString() })}
+                            >
+                                <Image
+                                    source={{ uri: (item as any).image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?w=800&q=80' }}
+                                    style={styles.locationImage}
+                                />
+                                <View style={styles.locationInfo}>
+                                    <Text style={styles.locationCardTitle}>{item.name}</Text>
+                                    <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>$ {item.basePrice}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                )}
 
                 <View style={{ height: 100 }} />
             </ScrollView>

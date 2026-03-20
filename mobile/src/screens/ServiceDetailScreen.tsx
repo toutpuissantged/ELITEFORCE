@@ -1,28 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { useAppSelector } from '../hooks/store';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
-import { Service } from '../types';
-import axios from 'axios';
+import { fetchServiceById } from '../store/servicesSlice';
+import { createBooking } from '../store/bookingSlice';
 
 type Props = StackScreenProps<MainStackParamList, 'ServiceDetail'>;
 
 export default function ServiceDetailScreen({ route, navigation }: Props) {
-    const { serviceId } = route.params;
-    const { list: services } = useAppSelector((state) => state.services);
+    const dispatch = useAppDispatch();
+    const { productId } = route.params as any; // Allow any for now to handle potential naming mismatch
+    const serviceId = typeof productId === 'string' ? parseInt(productId) : productId;
+    const { list: services, loading: servicesLoading } = useAppSelector((state) => state.services);
     const service = services.find(s => s.id === serviceId);
 
-    const { token } = useAppSelector((state) => state.auth);
-    const [loading, setLoading] = useState(false);
-
+    const { loading: bookingLoading } = useAppSelector((state) => state.bookings);
     const [address, setAddress] = useState('');
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const [scheduledAt, setScheduledAt] = useState(tomorrow.toISOString());
 
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
+    useEffect(() => {
+        if (!service) {
+            dispatch(fetchServiceById(serviceId));
+        }
+    }, [dispatch, serviceId, service]);
+
+    if (servicesLoading && !service) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#2e64e5" />
+            </View>
+        );
+    }
 
     if (!service) {
         return (
@@ -38,21 +50,14 @@ export default function ServiceDetailScreen({ route, navigation }: Props) {
             return;
         }
 
-        setLoading(true);
+        const resultAction = await dispatch(createBooking({
+            serviceId: service.id,
+            scheduledAt,
+            address,
+        }));
 
-        try {
-            const response = await axios.post(
-                `${API_URL}/api/bookings`,
-                {
-                    serviceId: service.id,
-                    scheduledAt,
-                    address,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            const newBooking = response.data;
-
+        if (createBooking.fulfilled.match(resultAction)) {
+            const newBooking = resultAction.payload;
             Alert.alert(
                 'Succès',
                 'Réservation créée avec succès. Vous allez être redirigé vers le paiement.',
@@ -67,12 +72,8 @@ export default function ServiceDetailScreen({ route, navigation }: Props) {
                     }
                 ]
             );
-        } catch (error: any) {
-            console.error(error);
-            const errorMsg = error.response?.data?.message || 'Erreur lors de la réservation';
-            Alert.alert('Erreur', errorMsg);
-        } finally {
-            setLoading(false);
+        } else {
+            Alert.alert('Erreur', resultAction.payload as string || 'Erreur lors de la réservation');
         }
     };
 
@@ -127,11 +128,11 @@ export default function ServiceDetailScreen({ route, navigation }: Props) {
                 <Text style={styles.hint}>Pour ce test, la date est fixée à demain.</Text>
 
                 <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
+                    style={[styles.button, bookingLoading && styles.buttonDisabled]}
                     onPress={handleBooking}
-                    disabled={loading}
+                    disabled={bookingLoading}
                 >
-                    {loading ? (
+                    {bookingLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
                         <Text style={styles.buttonText}>Confirmer et Payer</Text>

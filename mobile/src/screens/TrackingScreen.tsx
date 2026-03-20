@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,43 +8,64 @@ import {
     Image,
     ScrollView,
     Alert,
-    Dimensions
+    Dimensions,
+    ActivityIndicator
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
 import io from 'socket.io-client';
-import { useAppSelector } from '../hooks/store';
+import { useAppDispatch, useAppSelector } from '../hooks/store';
+import { fetchBookingById } from '../store/bookingSlice';
+import { BookingStatus } from '../types';
 
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
-const STEPS = [
-    { id: '1', title: 'Order Confirmed', time: '10:30 AM', completed: true },
-    { id: '2', title: 'Preparing Order', time: '10:45 AM', completed: true },
-    { id: '3', title: 'Driver is on the way', time: '11:00 AM', completed: false, active: true },
-    { id: '4', title: 'Delivered', time: '--:--', completed: false },
+const INITIAL_STEPS = [
+    { id: '1', title: 'Order Confirmed', time: '--:--', completed: false },
+    { id: '2', title: 'Preparing Order', time: '--:--', completed: false },
+    { id: '3', title: 'Provider is on the way', time: '--:--', completed: false, active: false },
+    { id: '4', title: 'Delivered / Completed', time: '--:--', completed: false },
 ];
 
 const { width } = Dimensions.get('window');
 
 const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
-    const { bookingId } = (route.params as any) || { bookingId: '1' };
+    const dispatch = useAppDispatch();
+    const { bookingId } = route.params;
+    const { list: bookings, loading } = useAppSelector(state => state.bookings);
+    const booking = bookings.find(b => b.id === bookingId);
+
     const { token } = useAppSelector(state => state.auth);
     const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
-    const [status, setStatus] = useState('PENDING');
-    const [steps, setSteps] = useState(STEPS);
+    const [steps, setSteps] = useState(INITIAL_STEPS);
 
     const API_URL = process.env.API_URL || 'http://localhost:3000';
 
-    const updateTimeline = (newStatus: string) => {
+    const updateTimeline = useCallback((newStatus: BookingStatus) => {
         setSteps(prevSteps => prevSteps.map(step => {
-            if (newStatus === 'CONFIRMED' && step.id === '1') return { ...step, completed: true };
-            if (newStatus === 'IN_PROGRESS' && step.id === '3') return { ...step, active: true, completed: false };
-            if (newStatus === 'COMPLETED') return { ...step, completed: true, active: false };
+            if ([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED].includes(newStatus) && step.id === '1')
+                return { ...step, completed: true };
+            if ([BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED].includes(newStatus) && step.id === '2')
+                return { ...step, completed: true };
+            if (newStatus === BookingStatus.IN_PROGRESS && step.id === '3')
+                return { ...step, active: true, completed: false };
+            if (newStatus === BookingStatus.COMPLETED)
+                return { ...step, completed: true, active: false };
             return step;
         }));
-    };
+    }, []);
+
+    useEffect(() => {
+        dispatch(fetchBookingById(bookingId));
+    }, [dispatch, bookingId]);
+
+    useEffect(() => {
+        if (booking) {
+            updateTimeline(booking.status);
+        }
+    }, [booking, updateTimeline]);
 
     useEffect(() => {
         if (!token) return;
@@ -54,16 +75,14 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         });
 
         socket.on('connect', () => {
-            console.log('Connected to socket');
-            socket.emit('join-booking-room', bookingId);
+            socket.emit('join-booking-room', bookingId.toString());
         });
 
         socket.on('provider-location', (coords: { latitude: number, longitude: number }) => {
             setLocation(coords);
         });
 
-        socket.on('booking-status-update', (data: { status: string }) => {
-            setStatus(data.status);
+        socket.on('booking-status-update', (data: { status: BookingStatus }) => {
             updateTimeline(data.status);
         });
 
@@ -75,7 +94,15 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         return () => {
             socket.disconnect();
         };
-    }, [bookingId, token]);
+    }, [bookingId, token, updateTimeline, API_URL]);
+
+    if (loading && !booking) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -117,8 +144,8 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                             style={styles.providerImage}
                         />
                         <View style={styles.providerInfo}>
-                            <Text style={styles.providerName}>John Doe</Text>
-                            <Text style={styles.providerRole}>Delivery Partner</Text>
+                            <Text style={styles.providerName}>{booking?.provider?.firstName || 'John'} {booking?.provider?.lastName || 'Doe'}</Text>
+                            <Text style={styles.providerRole}>Partner Elite Force</Text>
                         </View>
                         <View style={styles.actionBtns}>
                             <TouchableOpacity style={styles.actionBtn}>
@@ -127,7 +154,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                         </View>
                     </View>
 
-                    <Text style={styles.sectionTitle}>Order Status: {status}</Text>
+                    <Text style={styles.sectionTitle}>Order Status: {booking?.status || 'PENDING'}</Text>
                     <View style={styles.timeline}>
                         {steps.map((step, index) => (
                             <View key={step.id} style={styles.stepContainer}>
@@ -336,6 +363,12 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: theme.colors.text.muted,
         marginTop: 4,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
     },
 });
 

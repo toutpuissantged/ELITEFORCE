@@ -22,17 +22,27 @@ const METHODS = [
     { id: '3', title: 'PayPal', icon: 'wallet-outline', last4: null },
 ];
 
+import api from '../services/api';
+
 const PaymentScreen: React.FC<Props> = ({ route, navigation }) => {
-    const { amount, serviceName } = route.params;
+    const { amount, serviceName, bookingId } = route.params;
     const [selectedMethod, setSelectedMethod] = useState('1');
     const [loading, setLoading] = useState(false);
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         setLoading(true);
-        setTimeout(() => {
+        try {
+            // In a real app, we would use Stripe SDK here.
+            // For this test, we call the intent endpoint to simulate backend processing.
+            await api.post('/payments/intent', { bookingId });
+
+            navigation.navigate('Tracking', { bookingId });
+        } catch (error: any) {
+            console.error(error);
+            alert(error.response?.data?.message || 'Payment failed');
+        } finally {
             setLoading(false);
-            navigation.navigate('Tracking', { bookingId: route.params.bookingId });
-        }, 2000);
+        }
     };
 
     return (

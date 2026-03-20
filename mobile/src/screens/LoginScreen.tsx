@@ -12,14 +12,12 @@ import {
     Platform,
     ScrollView
 } from 'react-native';
-import { setUser, setToken, setLoading, setError } from '../store/authSlice';
+import { login, clearError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types/navigation';
 import { theme } from '../theme';
-import axios from 'axios';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -31,34 +29,15 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useAppDispatch();
     const { loading, error } = useAppSelector((state) => state.auth);
 
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
-
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
 
-        dispatch(setLoading(true));
-        dispatch(setError(null));
-
-        try {
-            const response = await axios.post(`${API_URL}/api/auth/login`, {
-                email,
-                password,
-            });
-
-            const { user, token } = response.data;
-
-            await AsyncStorage.setItem('token', token);
-            dispatch(setToken(token));
-            dispatch(setUser(user));
-        } catch (err: any) {
-            const errorMsg = err.response?.data?.message || 'Invalid credentials';
-            dispatch(setError(errorMsg));
-            Alert.alert('Error', errorMsg);
-        } finally {
-            dispatch(setLoading(false));
+        const resultAction = await dispatch(login({ email, password }));
+        if (login.rejected.match(resultAction)) {
+            Alert.alert('Error', resultAction.payload as string || 'Login failed');
         }
     };
 

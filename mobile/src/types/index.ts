@@ -24,6 +24,7 @@ export interface Service {
     duration: number;
     available: boolean;
     rating: number;
+    image?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -50,4 +51,5 @@ export interface Booking {
     updatedAt: string;
     service?: Service;
     user?: Partial<User>;
+    provider?: Partial<User>;
 }
