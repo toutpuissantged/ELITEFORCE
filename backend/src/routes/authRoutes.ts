@@ -12,19 +12,15 @@ router.post(
     body('firstName').trim().notEmpty().withMessage('First name is required'),
     body('lastName').trim().notEmpty().withMessage('Last name is required'),
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-    body('password')
-      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-      .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-      .matches(/[0-9]/).withMessage('Password must contain at least one number'),
+    body('password').notEmpty().withMessage('Password is required'),
     body('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
+      if (value && value !== req.body.password) {
         throw new Error('Password confirmation does not match password');
       }
       return true;
     }),
-    body('phone')
-      .matches(/^\+212[5-7]\d{8}$/).withMessage('Invalid Moroccan phone number format (+212 followed by 9 digits)'),
-    body('acceptTerms').equals('true').withMessage('You must accept the terms and conditions'),
+    body('phone').optional(),
+    body('acceptTerms').toBoolean(),
   ],
   validateRequest,
   register
