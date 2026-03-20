@@ -19,6 +19,7 @@ import io from 'socket.io-client';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { fetchBookingById } from '../store/bookingSlice';
 import { BookingStatus } from '../types';
+import { SOCKET_URL } from '../config';
 
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
@@ -40,8 +41,6 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const { token } = useAppSelector(state => state.auth);
     const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
     const [steps, setSteps] = useState(INITIAL_STEPS);
-
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
 
     const updateTimeline = useCallback((newStatus: BookingStatus) => {
         setSteps(prevSteps => prevSteps.map(step => {
@@ -70,7 +69,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     useEffect(() => {
         if (!token) return;
 
-        const socket = io(API_URL.replace('/api', ''), {
+        const socket = io(SOCKET_URL, {
             auth: { token }
         });
 
@@ -94,7 +93,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         return () => {
             socket.disconnect();
         };
-    }, [bookingId, token, updateTimeline, API_URL]);
+    }, [bookingId, token, updateTimeline]);
 
     if (loading && !booking) {
         return (

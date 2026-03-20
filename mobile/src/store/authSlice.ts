@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../types';
 import api from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../services/storage';
 
 interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
     loading: boolean;
+    isInitializing: boolean;
     error: string | null;
 }
 
@@ -16,6 +17,7 @@ const initialState: AuthState = {
     token: null,
     isAuthenticated: false,
     loading: false,
+    isInitializing: true,
     error: null,
 };
 
@@ -25,7 +27,7 @@ export const login = createAsyncThunk(
     async (credentials: any, { rejectWithValue }) => {
         try {
             const response = await api.post('/auth/login', credentials);
-            await AsyncStorage.setItem('token', response.data.token);
+            await storage.setItem('token', response.data.token);
             return response.data;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Login failed');
@@ -38,7 +40,7 @@ export const register = createAsyncThunk(
     async (userData: any, { rejectWithValue }) => {
         try {
             const response = await api.post('/auth/register', userData);
-            await AsyncStorage.setItem('token', response.data.token);
+            await storage.setItem('token', response.data.token);
             return response.data;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Registration failed');
@@ -58,6 +60,11 @@ export const fetchMe = createAsyncThunk(
     }
 );
 
+export const logout = createAsyncThunk('auth/logout', async (_, { dispatch }) => {
+    await storage.removeItem('token');
+    dispatch(authSlice.actions.clearAuthState());
+});
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -66,14 +73,16 @@ const authSlice = createSlice({
             state.token = action.payload;
             state.isAuthenticated = !!action.payload;
         },
-        logout: (state) => {
+        clearAuthState: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            AsyncStorage.removeItem('token');
         },
         clearError: (state) => {
             state.error = null;
+        },
+        setInitializing: (state, action: PayloadAction<boolean>) => {
+            state.isInitializing = action.payload;
         }
     },
     extraReducers: (builder) => {
@@ -110,15 +119,15 @@ const authSlice = createSlice({
             })
             // Fetch Me
             .addCase(fetchMe.pending, (state) => {
-                state.loading = true;
+                state.isInitializing = true;
             })
             .addCase(fetchMe.fulfilled, (state, action) => {
-                state.loading = false;
+                state.isInitializing = false;
                 state.user = action.payload;
                 state.isAuthenticated = true;
             })
             .addCase(fetchMe.rejected, (state) => {
-                state.loading = false;
+                state.isInitializing = false;
                 state.isAuthenticated = false;
                 state.token = null;
                 state.user = null;
@@ -126,6 +135,6 @@ const authSlice = createSlice({
     },
 });
 
-export const { setToken, logout, clearError } = authSlice.actions;
+export const { setToken, clearAuthState, clearError, setInitializing } = authSlice.actions;
 
 export default authSlice.reducer;

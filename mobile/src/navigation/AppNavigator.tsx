@@ -1,45 +1,37 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setToken, setUser, setLoading } from '../store/authSlice';
+import storage from '../services/storage';
+import { fetchMe, setToken, setInitializing } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
-import axios from 'axios';
 
 import AuthStack from './AuthStack';
 import MainStack from './MainStack';
 
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isInitializing } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
-
-  const API_URL = process.env.API_URL || 'http://localhost:3000';
 
   useEffect(() => {
     const bootstrapAsync = async () => {
-      dispatch(setLoading(true));
       try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await storage.getItem('token');
         if (token) {
-          // Verify token and fetch user details
-          const response = await axios.get(`${API_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          dispatch(setUser(response.data.user));
           dispatch(setToken(token));
+          await dispatch(fetchMe()).unwrap();
+          // If no token, we are no longer initializing
+          dispatch(setInitializing(false));
         }
       } catch (e) {
-        // Token invalid or expired
         console.log('Error restoring token:', e);
-        await AsyncStorage.removeItem('token');
-      } finally {
-        dispatch(setLoading(false));
+        await storage.removeItem('token');
+        dispatch(setInitializing(false));
       }
     };
 
     bootstrapAsync();
-  }, [dispatch, API_URL]);
+  }, [dispatch]);
 
-  if (loading) {
+  if (isInitializing) {
     // We could render a splash screen here
     return null;
   }

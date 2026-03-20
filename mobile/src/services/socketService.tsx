@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useAppSelector } from '../hooks/store';
 import { io, Socket } from 'socket.io-client';
 import { Alert } from 'react-native';
+import { SOCKET_URL } from '../config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -25,13 +26,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const { token, isAuthenticated } = useAppSelector((state) => state.auth);
 
-  const API_URL = process.env.API_URL || 'http://localhost:3000';
-
   useEffect(() => {
     let newSocket: Socket | null = null;
 
     if (isAuthenticated && token) {
-      newSocket = io(API_URL, {
+      newSocket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
       });
@@ -64,7 +63,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         newSocket.disconnect();
       }
     };
-  }, [isAuthenticated, token, API_URL]);
+  }, [isAuthenticated, token, SOCKET_URL]);
 
   const joinBookingRoom = (bookingId: number | string) => {
     if (socket) {

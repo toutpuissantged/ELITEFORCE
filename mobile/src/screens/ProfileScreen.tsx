@@ -12,7 +12,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { logout } from '../store/authSlice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 
 const ProfileScreen = () => {
@@ -28,8 +27,7 @@ const ProfileScreen = () => {
                 {
                     text: 'Logout',
                     style: 'destructive',
-                    onPress: async () => {
-                        await AsyncStorage.removeItem('token');
+                    onPress: () => {
                         dispatch(logout());
                     },
                 },

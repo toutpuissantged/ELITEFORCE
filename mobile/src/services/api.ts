@@ -1,11 +1,6 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-
-// For Android emulator, use 10.0.2.2. For iOS/Physical devices, use your local IP.
-const BASE_URL = Platform.OS === 'android'
-    ? 'http://10.0.2.2:3000/api'
-    : 'http://localhost:3000/api';
+import storage from './storage';
+import { BASE_URL } from '../config';
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -18,7 +13,7 @@ const api = axios.create({
 // Request interceptor to add the auth token
 api.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem('token');
+        const token = await storage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -37,7 +32,7 @@ api.interceptors.response.use(
             // Handle specific status codes
             if (error.response.status === 401) {
                 // Unauthorized - could trigger a logout or token refresh
-                await AsyncStorage.removeItem('token');
+                await storage.removeItem('token');
             }
             return Promise.reject(error.response.data);
         }
