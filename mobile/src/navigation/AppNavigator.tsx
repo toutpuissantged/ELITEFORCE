@@ -18,12 +18,11 @@ export default function AppNavigator() {
         if (token) {
           dispatch(setToken(token));
           await dispatch(fetchMe()).unwrap();
-          // If no token, we are no longer initializing
-          dispatch(setInitializing(false));
         }
       } catch (e) {
         console.log('Error restoring token:', e);
         await storage.removeItem('token');
+      } finally {
         dispatch(setInitializing(false));
       }
     };

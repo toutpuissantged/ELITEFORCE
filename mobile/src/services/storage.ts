@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
 const storage = {
     getItem: async (key: string): Promise<string | null> => {
@@ -10,9 +10,18 @@ const storage = {
                     return localStorage.getItem(key);
                 }
             }
-            if (AsyncStorage && typeof AsyncStorage.getItem === 'function') {
+
+            // On native, check if the native module actually exists to avoid the "Native module is null" error
+            const isNativeModuleAvailable =
+                NativeModules.RNCAsyncStorage ||
+                NativeModules.RCTAsyncStorage ||
+                NativeModules.AsyncStorage;
+
+            if (isNativeModuleAvailable && AsyncStorage && typeof AsyncStorage.getItem === 'function') {
                 return await AsyncStorage.getItem(key);
             }
+
+            // Fallback for environments with broken native modules
             return null;
         } catch (error) {
             console.error('Storage getItem error:', error);
@@ -27,7 +36,13 @@ const storage = {
                     return;
                 }
             }
-            if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+
+            const isNativeModuleAvailable =
+                NativeModules.RNCAsyncStorage ||
+                NativeModules.RCTAsyncStorage ||
+                NativeModules.AsyncStorage;
+
+            if (isNativeModuleAvailable && AsyncStorage && typeof AsyncStorage.setItem === 'function') {
                 await AsyncStorage.setItem(key, value);
             }
         } catch (error) {
@@ -42,7 +57,13 @@ const storage = {
                     return;
                 }
             }
-            if (AsyncStorage && typeof AsyncStorage.removeItem === 'function') {
+
+            const isNativeModuleAvailable =
+                NativeModules.RNCAsyncStorage ||
+                NativeModules.RCTAsyncStorage ||
+                NativeModules.AsyncStorage;
+
+            if (isNativeModuleAvailable && AsyncStorage && typeof AsyncStorage.removeItem === 'function') {
                 await AsyncStorage.removeItem(key);
             }
         } catch (error) {
