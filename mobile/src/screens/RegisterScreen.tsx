@@ -10,8 +10,10 @@ import {
     Alert,
     SafeAreaView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    StyleSheet as RNStyleSheet
 } from 'react-native';
+import PhoneInputField from '../components/PhoneInputField';
 import { setUser, setToken, setLoading, setError } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +34,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         password: '',
         confirmPassword: '',
     });
+    const [formattedPhone, setFormattedPhone] = useState('');
     const [agreeCGU, setAgreeCGU] = useState(false);
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -54,12 +57,10 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 if (!emailRegex.test(value)) error = 'Invalid email address';
                 break;
             case 'phone':
-                const phoneRegex = /^\+212[5-7]\d{8}$/;
-                if (!phoneRegex.test(value)) error = 'Invalid format (+212 followed by 9 digits)';
+                if (!value) error = 'Phone number required';
                 break;
             case 'password':
-                const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
-                if (!passwordRegex.test(value)) error = 'Min 8 chars, 1 uppercase, 1 digit';
+                if (!value) error = 'Password required';
                 break;
             case 'confirmPassword':
                 if (value !== formData.password) error = 'Passwords do not match';
@@ -97,7 +98,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
-                phone: formData.phone,
+                phone: formattedPhone || formData.phone,
                 password: formData.password,
             });
 
@@ -117,7 +118,9 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     const handleChange = (name: string, value: string) => {
         setFormData({ ...formData, [name]: value });
-        validateField(name, value);
+        if (name !== 'phone') {
+            validateField(name, value);
+        }
     };
 
     const renderInput = (
@@ -179,7 +182,20 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         </View>
 
                         {renderInput('email', 'Email Address', 'email-outline', 'email-address')}
-                        {renderInput('phone', 'Phone Number', 'phone-outline', 'phone-pad')}
+
+                        <View style={styles.inputContainer}>
+                            <PhoneInputField
+                                value={formData.phone}
+                                onChangeText={(text) => {
+                                    setFormData({ ...formData, phone: text });
+                                }}
+                                onFormattedChange={(text) => {
+                                    setFormattedPhone(text);
+                                }}
+                                error={validationErrors.phone}
+                            />
+                        </View>
+
                         {renderInput('password', 'Password', 'lock-outline', 'default', true)}
                         {renderInput('confirmPassword', 'Confirm Password', 'lock-check-outline', 'default', true)}
 
@@ -306,6 +322,28 @@ const styles = StyleSheet.create({
         marginTop: 4,
         marginLeft: 4,
         fontWeight: '500',
+    },
+    phoneContainer: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        height: 60,
+    },
+    phoneTextContainer: {
+        backgroundColor: 'transparent',
+        paddingVertical: 0,
+        borderRadius: 16,
+    },
+    phoneInputText: {
+        fontSize: 14,
+        color: theme.colors.text.primary,
+        height: 60,
+    },
+    phoneCodeText: {
+        fontSize: 14,
+        color: theme.colors.text.primary,
     },
     checkboxContainer: {
         flexDirection: 'row',
