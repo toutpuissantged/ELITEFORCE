@@ -126,7 +126,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                             <TouchableOpacity
                                 key={item.id}
                                 style={styles.locationCard}
-                                onPress={() => navigation.navigate('ProductDetail', { productId: item.id.toString() })}
+                                onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
                             >
                                 <Image
                                     source={{ uri: (item as any).image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?w=800&q=80' }}

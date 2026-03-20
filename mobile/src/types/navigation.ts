@@ -8,9 +8,8 @@ export type AuthStackParamList = {
 
 export type BottomTabParamList = {
     Home: undefined;
-    Chats: undefined;
-    Videos: undefined;
-    Cart: undefined;
+    Search: undefined;
+    Bookings: undefined;
     Profile: undefined;
 };
 
