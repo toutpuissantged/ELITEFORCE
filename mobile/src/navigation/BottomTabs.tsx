@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Home2, SearchNormal1, Calendar, User } from 'iconsax-react-native';
 import { BottomTabParamList } from '../types/navigation';
+import { theme } from '../theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -14,18 +15,30 @@ export default function BottomTabs() {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
-                tabBarIcon: ({ color, size }) => {
-                    let iconName: keyof typeof MaterialCommunityIcons.glyphMap | undefined;
+                tabBarIcon: ({ focused, color, size }) => {
+                    const iconSize = 24;
+                    const variant = focused ? "Bold" : "Outline";
 
-                    if (route.name === 'Home') iconName = 'home-outline';
-                    else if (route.name === 'Search') iconName = 'magnify';
-                    else if (route.name === 'Bookings') iconName = 'calendar-clock';
-                    else if (route.name === 'Profile') iconName = 'account-outline';
-
-                    return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
+                    if (route.name === 'Home') return <Home2 size={iconSize} color={color} variant={variant} />;
+                    if (route.name === 'Search') return <SearchNormal1 size={iconSize} color={color} variant={variant} />;
+                    if (route.name === 'Bookings') return <Calendar size={iconSize} color={color} variant={variant} />;
+                    if (route.name === 'Profile') return <User size={iconSize} color={color} variant={variant} />;
+                    
+                    return null;
                 },
-                tabBarActiveTintColor: '#1B4332',
-                tabBarInactiveTintColor: 'gray',
+                tabBarActiveTintColor: theme.colors.primary,
+                tabBarInactiveTintColor: theme.colors.text.muted,
+                tabBarShowLabel: true,
+                tabBarStyle: {
+                    backgroundColor: '#FFFFFF',
+                    borderTopWidth: 1,
+                    borderTopColor: theme.colors.border,
+                    height: 85,
+                    paddingBottom: 25,
+                    paddingTop: 10,
+                    elevation: 0, // No shadow for Android
+                    shadowOpacity: 0, // No shadow for iOS
+                },
                 headerShown: false,
             })}
         >

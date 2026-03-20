@@ -12,7 +12,18 @@ import {
     ActivityIndicator,
     RefreshControl
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    Notification, 
+    SearchNormal1, 
+    Filter, 
+    ShieldTick, 
+    Video, 
+    Car, 
+    Monitor, 
+    ClipboardText, 
+    Star1,
+    ArrowRight
+} from 'iconsax-react-native';
 import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -27,12 +38,12 @@ type Props = CompositeScreenProps<
 >;
 
 const CATEGORIES = [
-    { id: '1', name: 'Protection VIP', icon: 'shield-account-outline', color: '#FFF4E5' },
-    { id: '2', name: 'Sécurité Événementielle', icon: 'stadium-variant', color: '#F0FDF4' },
-    { id: '3', name: 'Vidéosurveillance', icon: 'cctv', color: '#FDF2F2' },
-    { id: '4', name: 'Transport Sécurisé', icon: 'car-defrost', color: '#FFFBEB' },
-    { id: '5', name: 'Cybersécurité', icon: 'laptop-account', color: '#F5F3FF' },
-    { id: '6', name: 'Audit et Conseil', icon: 'clipboard-text-outline', color: '#F0FDFA' },
+    { id: '1', name: 'Protection VIP', icon: ShieldTick, color: '#F9FAFB' },
+    { id: '2', name: 'Événementiel', icon: ClipboardText, color: '#F9FAFB' },
+    { id: '3', name: 'Vidéosurveillance', icon: Video, color: '#F9FAFB' },
+    { id: '4', name: 'Transport Sécurisé', icon: Car, color: '#F9FAFB' },
+    { id: '5', name: 'Cybersécurité', icon: Monitor, color: '#F9FAFB' },
+    { id: '6', name: 'Audit & Conseil', icon: ClipboardText, color: '#F9FAFB' },
 ];
 
 const { width } = Dimensions.get('window');
@@ -65,11 +76,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleCategorySelect = (categoryName: string) => {
-        dispatch(setServicesFilters({ category: categoryName }));
-        navigation.navigate('Search');
-    };
-
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView 
@@ -90,22 +96,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                             <Text style={styles.userName}>{user?.firstName || 'Utilisateur'}</Text>
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.notificationBtn}>
-                        <MaterialCommunityIcons name="bell-outline" size={24} color={theme.colors.text.primary} />
-                        <View style={styles.notificationDot} />
+                    <TouchableOpacity style={styles.iconBtn}>
+                        <Notification size={24} color={theme.colors.text.primary} variant="Outline" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Title Section */}
+                {/* Title */}
                 <View style={styles.titleSection}>
                     <Text style={styles.mainTitle}>Sécurisez Votre Monde</Text>
                     <Text style={styles.subTitle}>avec EliteForce Security.</Text>
                 </View>
 
-                {/* Search Bar */}
+                {/* Search Bar - Minimal Flat Style */}
                 <View style={styles.searchSection}>
                     <View style={styles.searchBar}>
-                        <MaterialCommunityIcons name="magnify" size={22} color={theme.colors.text.muted} />
+                        <SearchNormal1 size={20} color={theme.colors.text.muted} variant="Outline" />
                         <TextInput
                             placeholder="Rechercher une protection..."
                             style={styles.searchInput}
@@ -114,13 +119,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                             onChangeText={setSearchQuery}
                             onSubmitEditing={handleSearch}
                         />
-                        <TouchableOpacity style={styles.filterBtn} onPress={() => navigation.navigate('Search')}>
-                            <MaterialCommunityIcons name="tune" size={22} color={theme.colors.primary} />
+                        <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+                            <Filter size={20} color={theme.colors.primary} variant="Outline" />
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Categories Grid */}
+                {/* Categories Grid - Flat minimalist cards */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Services Spécialisés</Text>
                 </View>
@@ -130,23 +135,25 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                         <TouchableOpacity
                             key={category.id}
                             style={styles.categoryItem}
-                            onPress={() => handleCategorySelect(category.name)}
+                            onPress={() => {
+                                dispatch(setServicesFilters({ category: category.name }));
+                                navigation.navigate('Search');
+                            }}
                         >
                             <View style={styles.categoryCard}>
-                                <View style={[styles.categoryIconBg, { backgroundColor: category.color }]}>
-                                    <MaterialCommunityIcons name={category.icon as any} size={26} color={theme.colors.primary} />
-                                </View>
-                                <Text style={styles.categoryName} numberOfLines={2}>{category.name}</Text>
+                                <category.icon size={28} color={theme.colors.primary} variant="Outline" />
+                                <Text style={styles.categoryName}>{category.name}</Text>
                             </View>
                         </TouchableOpacity>
                     ))}
                 </View>
 
-                {/* Featured Services */}
+                {/* Featured Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Recommandé pour vous</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Search')} style={styles.seeAllBtn}>
                         <Text style={styles.seeAll}>Voir tout</Text>
+                        <ArrowRight size={14} color={theme.colors.primary} variant="Outline" />
                     </TouchableOpacity>
                 </View>
 
@@ -158,49 +165,31 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.featuredList}
                     >
-                        {list.length > 0 ? (
-                            list.slice(0, 5).map((item) => (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={styles.featuredCard}
-                                    onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
-                                >
-                                    <Image
-                                        source={{ uri: item.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=800&q=80' }}
-                                        style={styles.featuredImage}
-                                    />
-                                    <View style={styles.featuredInfo}>
-                                        <Text style={styles.featuredCategory}>{item.category}</Text>
-                                        <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
-                                        <View style={styles.priceRow}>
-                                            <Text style={styles.featuredPrice}>{item.basePrice} Dhs</Text>
-                                            <View style={styles.ratingRow}>
-                                                <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
-                                                <Text style={styles.ratingText}>{item.rating}</Text>
-                                            </View>
+                        {list.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.featuredCard}
+                                onPress={() => navigation.navigate('ServiceDetail', { serviceId: item.id })}
+                            >
+                                <Image
+                                    source={{ uri: item.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=800&q=80' }}
+                                    style={styles.featuredImage}
+                                />
+                                <View style={styles.featuredInfo}>
+                                    <Text style={styles.itemCategory}>{item.category}</Text>
+                                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                                    <View style={styles.itemFooter}>
+                                        <Text style={styles.itemPrice}>{item.basePrice} Dhs</Text>
+                                        <View style={styles.ratingRow}>
+                                            <Star1 size={14} color="#FFD700" variant="Bold" />
+                                            <Text style={styles.ratingText}>{item.rating}</Text>
                                         </View>
                                     </View>
-                                </TouchableOpacity>
-                            ))
-                        ) : (
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>Aucun service disponible pour le moment.</Text>
-                            </View>
-                        )}
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                     </ScrollView>
                 )}
-
-                {/* Promo Banner */}
-                <TouchableOpacity style={styles.promoBanner}>
-                    <View style={styles.promoContent}>
-                        <Text style={styles.promoTitle}>Offre Spéciale</Text>
-                        <Text style={styles.promoDesc}>-20% sur votre premier audit de sécurité complet.</Text>
-                        <View style={styles.promoBadge}>
-                            <Text style={styles.promoBadgeText}>PROFITER MAINTENANT</Text>
-                        </View>
-                    </View>
-                    <MaterialCommunityIcons name="shield-star" size={80} color="rgba(255,255,255,0.2)" style={styles.promoIcon} />
-                </TouchableOpacity>
 
                 <View style={{ height: 100 }} />
             </ScrollView>
@@ -211,7 +200,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FB',
+        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
@@ -225,63 +214,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        width: 45,
-        height: 45,
-        borderRadius: 22.5,
-        borderWidth: 2,
-        borderColor: '#fff',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: theme.colors.surface,
     },
     userInfo: {
         marginLeft: 12,
     },
     greeting: {
         fontSize: 12,
-        color: '#888',
+        color: theme.colors.text.secondary,
     },
     userName: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#222',
+        color: theme.colors.text.primary,
     },
-    notificationBtn: {
-        width: 45,
-        height: 45,
-        borderRadius: 22.5,
-        backgroundColor: '#fff',
+    iconBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    notificationDot: {
-        position: 'absolute',
-        top: 12,
-        right: 14,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: theme.colors.error,
-        borderWidth: 1.5,
-        borderColor: '#fff',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     titleSection: {
         paddingHorizontal: 24,
-        marginTop: 24,
+        marginTop: 32,
     },
     mainTitle: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#222',
-        lineHeight: 34,
+        color: theme.colors.text.primary,
+        letterSpacing: -0.5,
     },
     subTitle: {
         fontSize: 24,
         fontWeight: '400',
-        color: '#888',
-        lineHeight: 30,
+        color: theme.colors.text.secondary,
+        marginTop: 2,
     },
     searchSection: {
         paddingHorizontal: 24,
@@ -290,131 +263,112 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 18,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 16,
         paddingHorizontal: 16,
-        height: 58,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
-        elevation: 3,
+        height: 56,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     searchInput: {
         flex: 1,
         marginLeft: 12,
         fontSize: 15,
-        color: '#222',
-    },
-    filterBtn: {
-        padding: 8,
-        borderLeftWidth: 1,
-        borderLeftColor: '#f0f0f0',
-        marginLeft: 8,
-        paddingLeft: 16,
+        color: theme.colors.text.primary,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         paddingHorizontal: 24,
-        marginTop: 32,
+        marginTop: 40,
         marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        color: '#222',
+        fontWeight: '800',
+        color: theme.colors.text.primary,
+    },
+    seeAllBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     seeAll: {
         fontSize: 14,
         color: theme.colors.primary,
         fontWeight: '600',
+        marginRight: 4,
     },
     categoriesGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         paddingHorizontal: 16,
-        justifyContent: 'space-between',
     },
     categoryItem: {
         width: '33.33%',
         padding: 8,
     },
     categoryCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         borderRadius: 20,
-        padding: 16,
+        padding: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-        elevation: 2,
-        height: 120,
-    },
-    categoryIconBg: {
-        width: 50,
-        height: 50,
-        borderRadius: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        height: 110,
     },
     categoryName: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#444',
+        color: theme.colors.text.primary,
         textAlign: 'center',
+        marginTop: 10,
     },
     featuredList: {
         paddingLeft: 24,
         paddingRight: 8,
     },
     featuredCard: {
-        width: width * 0.6,
-        backgroundColor: '#fff',
+        width: width * 0.65,
+        backgroundColor: '#FFFFFF',
         borderRadius: 24,
         marginRight: 16,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 4,
-        marginBottom: 10,
     },
     featuredImage: {
         width: '100%',
         height: 140,
-        resizeMode: 'cover',
+        backgroundColor: '#F3F4F6',
     },
     featuredInfo: {
         padding: 16,
     },
-    featuredCategory: {
+    itemCategory: {
         fontSize: 10,
-        color: theme.colors.primary,
         fontWeight: '800',
+        color: theme.colors.secondary,
         textTransform: 'uppercase',
-        marginBottom: 4,
+        letterSpacing: 1,
     },
-    featuredName: {
+    itemName: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#222',
-        marginBottom: 8,
+        color: theme.colors.text.primary,
+        marginTop: 4,
     },
-    priceRow: {
+    itemFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: 12,
     },
-    featuredPrice: {
+    itemPrice: {
         fontSize: 15,
         fontWeight: '800',
-        color: '#222',
+        color: theme.colors.text.primary,
     },
     ratingRow: {
         flexDirection: 'row',
@@ -427,60 +381,8 @@ const styles = StyleSheet.create({
     ratingText: {
         fontSize: 12,
         fontWeight: '700',
-        color: '#222',
+        color: theme.colors.text.primary,
         marginLeft: 4,
-    },
-    emptyContainer: {
-        width: width - 48,
-        padding: 40,
-        alignItems: 'center',
-    },
-    emptyText: {
-        color: '#888',
-        fontSize: 14,
-    },
-    promoBanner: {
-        marginHorizontal: 24,
-        marginTop: 32,
-        backgroundColor: theme.colors.primary,
-        borderRadius: 24,
-        padding: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    promoContent: {
-        flex: 1,
-        zIndex: 1,
-    },
-    promoTitle: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: '800',
-        marginBottom: 8,
-    },
-    promoDesc: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 14,
-        lineHeight: 20,
-        marginBottom: 16,
-    },
-    promoBadge: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 12,
-        alignSelf: 'flex-start',
-    },
-    promoBadgeText: {
-        color: theme.colors.primary,
-        fontSize: 12,
-        fontWeight: '800',
-    },
-    promoIcon: {
-        position: 'absolute',
-        right: -10,
-        bottom: -10,
     },
 });
 

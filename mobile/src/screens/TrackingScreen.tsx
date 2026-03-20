@@ -12,7 +12,15 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    ArrowLeft, 
+    MessageQuestion, 
+    Call, 
+    TruckFast, 
+    TickCircle,
+    InfoCircle,
+    Status
+} from 'iconsax-react-native';
 import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
@@ -25,10 +33,10 @@ import { SOCKET_URL } from '../config';
 type Props = StackScreenProps<MainStackParamList, 'Tracking'>;
 
 const INITIAL_STEPS = [
-    { id: '1', title: 'Order Confirmed', time: '--:--', completed: false },
-    { id: '2', title: 'Preparing Order', time: '--:--', completed: false },
-    { id: '3', title: 'Provider is on the way', time: '--:--', completed: false, active: false },
-    { id: '4', title: 'Delivered / Completed', time: '--:--', completed: false },
+    { id: '1', title: 'Commande confirmée', completed: false },
+    { id: '2', title: 'Préparation en cours', completed: false },
+    { id: '3', title: 'Prestataire en route', completed: false, active: false },
+    { id: '4', title: 'Service terminé', completed: false },
 ];
 
 const { width } = Dimensions.get('window');
@@ -40,7 +48,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const booking = bookings.find(b => b.id === bookingId);
 
     const { token } = useAppSelector(state => state.auth);
-    const [location, setLocation] = useState({ latitude: 33.5731, longitude: -7.5898 }); // Default to Casablanca HQ
+    const [location, setLocation] = useState({ latitude: 33.5731, longitude: -7.5898 });
     const [steps, setSteps] = useState(INITIAL_STEPS);
 
     const updateTimeline = useCallback((newStatus: BookingStatus) => {
@@ -87,7 +95,7 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         });
 
         socket.on('mission-completed', () => {
-            Alert.alert('Success', 'Your service has been completed!');
+            Alert.alert('Succès', 'Votre prestation est terminée !');
             navigation.navigate('BottomTabs', { screen: 'Bookings' } as any);
         });
 
@@ -106,22 +114,23 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                    <ArrowLeft size={24} color={theme.colors.text.primary} variant="Outline" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Track Order</Text>
-                <TouchableOpacity style={styles.helpBtn}>
-                    <MaterialCommunityIcons name="help-circle-outline" size={24} color={theme.colors.text.primary} />
+                <Text style={styles.headerTitle}>Suivi du service</Text>
+                <TouchableOpacity style={styles.iconBtn}>
+                    <MessageQuestion size={24} color={theme.colors.text.primary} variant="Outline" />
                 </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Map View */}
-                <View style={styles.mapPlaceholder}>
+                {/* Map Section - Minimal flat layout */}
+                <View style={styles.mapWrapper}>
                     <MapView
                         provider={PROVIDER_GOOGLE}
-                        style={styles.mapImage}
+                        style={styles.map}
                         region={{
                             latitude: location.latitude,
                             longitude: location.longitude,
@@ -130,42 +139,53 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                         }}
                     >
                         <Marker coordinate={location}>
-                            <View style={styles.providerMarker}>
-                                <MaterialCommunityIcons name="truck-delivery" size={24} color="#fff" />
+                            <View style={styles.markerContainer}>
+                                <View style={styles.markerInner}>
+                                    <TruckFast size={24} color="#FFF" variant="Bold" />
+                                </View>
                             </View>
                         </Marker>
                     </MapView>
                 </View>
 
-                {/* Tracking Content */}
+                {/* Content Panel */}
                 <View style={styles.content}>
+                    {/* Provider Info Card */}
                     <View style={styles.providerCard}>
                         <Image
                             source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&q=80' }}
-                            style={styles.providerImage}
+                            style={styles.providerAvatar}
                         />
-                        <View style={styles.providerInfo}>
-                            <Text style={styles.providerName}>{booking?.provider?.firstName || 'John'} {booking?.provider?.lastName || 'Doe'}</Text>
-                            <Text style={styles.providerRole}>Partner Elite Force</Text>
+                        <View style={styles.providerDetails}>
+                            <Text style={styles.providerName}>
+                                {booking?.provider?.firstName || 'Agent'} {booking?.provider?.lastName || 'EliteForce'}
+                            </Text>
+                            <View style={styles.badgeRow}>
+                                <Status size={12} color={theme.colors.success} variant="Bold" />
+                                <Text style={styles.statusLabel}>En service</Text>
+                            </View>
                         </View>
-                        <View style={styles.actionBtns}>
-                            <TouchableOpacity style={styles.actionBtn}>
-                                <MaterialCommunityIcons name="phone-outline" size={20} color={theme.colors.primary} />
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity style={styles.callBtn}>
+                            <Call size={24} color={theme.colors.primary} variant="Bold" />
+                        </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.sectionTitle}>Order Status: {booking?.status || 'PENDING'}</Text>
+                    {/* Timeline Section */}
+                    <View style={styles.timelineHeader}>
+                        <InfoCircle size={20} color={theme.colors.text.primary} variant="Outline" />
+                        <Text style={styles.sectionTitle}>Progression</Text>
+                    </View>
+
                     <View style={styles.timeline}>
                         {steps.map((step, index) => (
-                            <View key={step.id} style={styles.stepContainer}>
-                                <View style={styles.indicatorContainer}>
+                            <View key={step.id} style={styles.stepWrapper}>
+                                <View style={styles.indicatorCol}>
                                     <View style={[
                                         styles.dot,
                                         step.completed && styles.dotCompleted,
                                         step.active && styles.dotActive
                                     ]}>
-                                        {step.completed && <MaterialCommunityIcons name="check" size={12} color="#fff" />}
+                                        {step.completed && <TickCircle size={20} color={theme.colors.success} variant="Bold" />}
                                     </View>
                                     {index < steps.length - 1 && (
                                         <View style={[
@@ -174,12 +194,14 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                                         ]} />
                                     )}
                                 </View>
-                                <View style={styles.stepInfo}>
+                                <View style={styles.stepContent}>
                                     <Text style={[
                                         styles.stepTitle,
-                                        step.active && styles.stepTitleActive
+                                        (step.active || step.completed) && styles.stepTitleActive
                                     ]}>{step.title}</Text>
-                                    <Text style={styles.stepTime}>{step.time}</Text>
+                                    <Text style={styles.stepStatus}>
+                                        {step.completed ? 'Terminé' : step.active ? 'En cours' : 'En attente'}
+                                    </Text>
                                 </View>
                             </View>
                         ))}
@@ -193,22 +215,21 @@ const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: '#fff',
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
     },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
+    iconBtn: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
@@ -216,47 +237,37 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: '700',
+        fontWeight: '800',
         color: theme.colors.text.primary,
     },
-    helpBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+    mapWrapper: {
+        height: 320,
+        backgroundColor: '#F3F4F6',
     },
-    mapPlaceholder: {
-        height: 300,
-        width: '100%',
-        backgroundColor: '#FAFAFA',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    mapImage: {
+    map: {
         width: '100%',
         height: '100%',
-        opacity: 0.6,
     },
-    providerMarker: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+    markerContainer: {
+        padding: 4,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        borderRadius: 20,
+    },
+    markerInner: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: theme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
-        borderColor: '#fff',
+        borderColor: '#FFFFFF',
     },
     content: {
-        padding: theme.spacing.lg,
+        padding: 24,
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         marginTop: -32,
         minHeight: 400,
     },
@@ -266,89 +277,101 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9FAFB',
         borderRadius: 24,
         padding: 16,
-        marginBottom: 32,
         borderWidth: 1,
         borderColor: theme.colors.border,
+        marginBottom: 32,
     },
-    providerImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+    providerAvatar: {
+        width: 56,
+        height: 56,
+        borderRadius: 20,
+        backgroundColor: '#E5E7EB',
     },
-    providerInfo: {
+    providerDetails: {
         flex: 1,
         marginLeft: 16,
     },
     providerName: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 17,
+        fontWeight: '800',
         color: theme.colors.text.primary,
     },
-    providerRole: {
-        fontSize: 12,
-        color: theme.colors.text.muted,
-        marginTop: 2,
-    },
-    actionBtns: {
+    badgeRow: {
         flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
     },
-    actionBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
+    statusLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.success,
+        marginLeft: 6,
+    },
+    callBtn: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: theme.colors.border,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: theme.colors.text.primary,
+    timelineHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 24,
     },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: theme.colors.text.primary,
+        marginLeft: 10,
+    },
     timeline: {
-        paddingLeft: 8,
+        paddingLeft: 4,
     },
-    stepContainer: {
+    stepWrapper: {
         flexDirection: 'row',
-        height: 80,
+        minHeight: 80,
     },
-    indicatorContainer: {
+    indicatorCol: {
         alignItems: 'center',
-        width: 30,
+        width: 32,
     },
     dot: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: theme.colors.borderMedium,
         zIndex: 1,
     },
     dotCompleted: {
-        backgroundColor: theme.colors.success,
+        backgroundColor: 'transparent',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        marginLeft: -3,
+        marginTop: -3,
     },
     dotActive: {
         backgroundColor: theme.colors.primary,
         borderWidth: 4,
-        borderColor: '#E0F2FE',
+        borderColor: '#EEF2FF',
     },
     line: {
         width: 2,
         flex: 1,
-        backgroundColor: '#E5E7EB',
+        backgroundColor: theme.colors.border,
         marginVertical: 4,
     },
     lineCompleted: {
         backgroundColor: theme.colors.success,
     },
-    stepInfo: {
+    stepContent: {
         flex: 1,
         marginLeft: 16,
-        paddingTop: 0,
+        paddingTop: -2,
     },
     stepTitle: {
         fontSize: 15,
@@ -359,16 +382,17 @@ const styles = StyleSheet.create({
         color: theme.colors.text.primary,
         fontWeight: '700',
     },
-    stepTime: {
+    stepStatus: {
         fontSize: 12,
         color: theme.colors.text.muted,
         marginTop: 4,
+        fontWeight: '500',
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
     },
 });
 

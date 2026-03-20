@@ -11,7 +11,13 @@ import {
     RefreshControl,
     Dimensions
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    Calendar, 
+    Clock, 
+    ArrowRight2, 
+    CalendarRemove,
+    TickCircle
+} from 'iconsax-react-native';
 import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -45,11 +51,11 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
 
     const getStatusStyle = (status: BookingStatus) => {
         switch (status) {
-            case BookingStatus.IN_PROGRESS: return { bg: '#E0F2FE', text: '#0369A1', label: 'En Cours' };
+            case BookingStatus.IN_PROGRESS: return { bg: '#F9FAFB', text: theme.colors.primary, label: 'En Cours' };
             case BookingStatus.COMPLETED: return { bg: '#F0FDF4', text: '#15803D', label: 'Terminé' };
             case BookingStatus.CANCELLED: return { bg: '#FEF2F2', text: '#B91C1C', label: 'Annulé' };
-            case BookingStatus.CONFIRMED: return { bg: '#F5F3FF', text: '#6D28D9', label: 'Confirmé' };
-            default: return { bg: '#F3F4F6', text: '#4B5563', label: 'En Attente' };
+            case BookingStatus.CONFIRMED: return { bg: '#EEF2FF', text: '#4F46E5', label: 'Confirmé' };
+            default: return { bg: '#F9FAFB', text: '#4B5563', label: 'En Attente' };
         }
     };
 
@@ -64,16 +70,14 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
                 activeOpacity={0.7}
             >
                 <View style={styles.cardHeader}>
-                    <View style={styles.serviceInfo}>
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={{ uri: item.service?.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=200&q=80' }}
-                                style={styles.serviceImage}
-                            />
-                        </View>
-                        <View style={styles.textContainer}>
-                            <Text style={styles.categoryName}>{item.service?.category || 'Service'}</Text>
-                            <Text style={styles.serviceName} numberOfLines={1}>{item.service?.name || 'Unnamed Service'}</Text>
+                    <View style={styles.serviceBox}>
+                        <Image
+                            source={{ uri: item.service?.image || 'https://images.unsplash.com/photo-1544022485-6bb04439c73d?w=200&q=80' }}
+                            style={styles.serviceImage}
+                        />
+                        <View style={styles.serviceTexts}>
+                            <Text style={styles.categoryName}>{item.service?.category}</Text>
+                            <Text style={styles.serviceName} numberOfLines={1}>{item.service?.name}</Text>
                         </View>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
@@ -85,32 +89,25 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
 
                 <View style={styles.cardDetails}>
                     <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="calendar-outline" size={16} color="#888" />
-                        <Text style={styles.detailText}>
-                            {new Date(item.scheduledAt).toLocaleDateString('fr-FR')}
-                        </Text>
+                        <Calendar size={18} color={theme.colors.text.muted} variant="Outline" />
+                        <Text style={styles.detailText}>{new Date(item.scheduledAt).toLocaleDateString('fr-FR')}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="clock-outline" size={16} color="#888" />
-                        <Text style={styles.detailText}>
-                            {new Date(item.scheduledAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
+                        <Clock size={18} color={theme.colors.text.muted} variant="Outline" />
+                        <Text style={styles.detailText}>{new Date(item.scheduledAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text>
                     </View>
                 </View>
 
                 <View style={styles.cardFooter}>
-                    <View style={styles.priceSection}>
-                        <Text style={styles.priceLabel}>Prix Payé</Text>
+                    <View>
+                        <Text style={styles.priceLabel}>Total payé</Text>
                         <Text style={styles.priceValue}>{item.totalPrice} Dhs</Text>
                     </View>
                     {canTrack && (
-                        <TouchableOpacity 
-                            style={styles.trackBtn}
-                            onPress={() => navigation.navigate('Tracking', { bookingId: item.id })}
-                        >
-                            <Text style={styles.trackBtnText}>Suivre</Text>
-                            <MaterialCommunityIcons name="chevron-right" size={18} color="#fff" />
-                        </TouchableOpacity>
+                        <View style={styles.trackAction}>
+                            <Text style={styles.trackText}>Suivre</Text>
+                            <ArrowRight2 size={16} color={theme.colors.primary} variant="Outline" />
+                        </View>
                     )}
                 </View>
             </TouchableOpacity>
@@ -124,7 +121,7 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {loading && !refreshing && bookings.length === 0 ? (
-                <View style={styles.centerContainer}>
+                <View style={styles.loader}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             ) : (
@@ -138,17 +135,15 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
                     }
                     renderItem={renderItem}
                     ListEmptyComponent={() => (
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconBg}>
-                                <MaterialCommunityIcons name="calendar-blank-outline" size={60} color="#CBD5E1" />
-                            </View>
+                        <View style={styles.emptyState}>
+                            <CalendarRemove size={64} color={theme.colors.borderMedium} variant="Outline" />
                             <Text style={styles.emptyTitle}>Aucune réservation</Text>
-                            <Text style={styles.emptyDesc}>Vous n'avez pas encore effectué de réservation de services EliteForce.</Text>
+                            <Text style={styles.emptyDesc}>Vous n'avez pas encore de réservations de services.</Text>
                             <TouchableOpacity 
-                                style={styles.bookNowBtn}
+                                style={styles.browseBtn}
                                 onPress={() => navigation.navigate('Home')}
                             >
-                                <Text style={styles.bookNowText}>Découvrir nos services</Text>
+                                <Text style={styles.browseBtnText}>Découvrir les services</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -161,80 +156,70 @@ const BookingsScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FB',
+        backgroundColor: '#FFFFFF',
     },
     header: {
         paddingHorizontal: 24,
         paddingTop: 16,
-        paddingBottom: 16,
-        backgroundColor: '#fff',
+        paddingBottom: 24,
         borderBottomWidth: 1,
-        borderBottomColor: '#F1F5F9',
+        borderBottomColor: theme.colors.border,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: '800',
-        color: '#1E293B',
+        color: theme.colors.text.primary,
+        letterSpacing: -0.5,
     },
     listContent: {
         padding: 24,
     },
     card: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: 20,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
-        elevation: 3,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: theme.colors.border,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
     },
-    serviceInfo: {
+    serviceBox: {
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
     },
-    imageContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 15,
-        overflow: 'hidden',
-        backgroundColor: '#F1F5F9',
-    },
     serviceImage: {
-        width: '100%',
-        height: '100%',
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#F3F4F6',
     },
-    textContainer: {
-        marginLeft: 14,
+    serviceTexts: {
+        marginLeft: 12,
         flex: 1,
     },
     categoryName: {
         fontSize: 10,
-        fontWeight: '700',
-        color: theme.colors.primary,
+        fontWeight: '800',
+        color: theme.colors.secondary,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 1,
     },
     serviceName: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1E293B',
+        color: theme.colors.text.primary,
         marginTop: 2,
     },
     statusBadge: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 10,
-        marginLeft: 10,
+        borderRadius: 8,
+        marginLeft: 8,
     },
     statusText: {
         fontSize: 11,
@@ -242,7 +227,7 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: '#F1F5F9',
+        backgroundColor: theme.colors.border,
         marginVertical: 16,
     },
     cardDetails: {
@@ -252,11 +237,11 @@ const styles = StyleSheet.create({
     detailItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 24,
+        marginRight: 20,
     },
     detailText: {
         fontSize: 13,
-        color: '#64748B',
+        color: theme.colors.text.secondary,
         marginLeft: 6,
         fontWeight: '500',
     },
@@ -264,84 +249,65 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#F9FAFB',
         padding: 12,
-        borderRadius: 16,
-    },
-    priceSection: {
-        flex: 1,
+        borderRadius: 12,
     },
     priceLabel: {
         fontSize: 10,
-        color: '#94A3B8',
-        fontWeight: '600',
+        color: theme.colors.text.muted,
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
     priceValue: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: theme.colors.text.primary,
     },
-    trackBtn: {
-        backgroundColor: theme.colors.primary,
+    trackAction: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 12,
     },
-    trackBtnText: {
-        color: '#fff',
+    trackText: {
         fontSize: 13,
         fontWeight: '700',
+        color: theme.colors.primary,
         marginRight: 4,
     },
-    centerContainer: {
+    loader: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    emptyContainer: {
+    emptyState: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 80,
-        paddingHorizontal: 40,
-    },
-    emptyIconBg: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#F1F5F9',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 24,
     },
     emptyTitle: {
         fontSize: 20,
         fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 8,
+        color: theme.colors.text.primary,
+        marginTop: 16,
     },
     emptyDesc: {
         fontSize: 14,
-        color: '#64748B',
+        color: theme.colors.text.secondary,
         textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 32,
+        marginTop: 8,
+        paddingHorizontal: 40,
+        lineHeight: 20,
     },
-    bookNowBtn: {
+    browseBtn: {
         backgroundColor: theme.colors.primary,
         paddingHorizontal: 24,
         paddingVertical: 14,
         borderRadius: 16,
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        marginTop: 24,
     },
-    bookNowText: {
-        color: '#fff',
+    browseBtnText: {
+        color: '#FFFFFF',
         fontSize: 15,
         fontWeight: '700',
     },

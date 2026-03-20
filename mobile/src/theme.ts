@@ -1,20 +1,20 @@
 export const theme = {
     colors: {
-        primary: '#1B4332',      // Dark Green
-        secondary: '#FF7043',    // Promo Orange
-        accent: '#2E7D32',       // Vibrant Green for buttons
-        background: '#F9FAFB',   // Off-white
-        surface: '#FFFFFF',      // White for cards
+        primary: '#000000',      // Solid Black for minimalist feel
+        secondary: '#4F46E5',    // Indigo for subtle accents
+        accent: '#10B981',       // Emerald for success/positive actions
+        background: '#FFFFFF',   // Pure White
+        surface: '#F9FAFB',      // Very light gray for cards/sections
         text: {
-            primary: '#111827',  // Black
-            secondary: '#4B5563',// Gray
+            primary: '#111827',  // Deep Black-Gray
+            secondary: '#4B5563',// Medium Gray
             muted: '#9CA3AF',    // Light Gray
         },
-        border: '#E5E7EB',
+        border: '#F3F4F6',       // Very subtle border
+        borderMedium: '#E5E7EB', // Slightly more visible border
         error: '#EF4444',
         warning: '#F59E0B',
         success: '#10B981',
-        badge: '#FF4D4D',       // Red for badges
     },
     spacing: {
         xs: 4,
@@ -22,36 +22,38 @@ export const theme = {
         md: 16,
         lg: 24,
         xl: 32,
+        xxl: 40,
     },
     borderRadius: {
-        sm: 10,
-        md: 16,
-        lg: 24,
-        xl: 32,
+        none: 0,
+        sm: 8,
+        md: 12,
+        lg: 16,
+        xl: 24,
+        full: 9999,
     },
     typography: {
         h1: {
-            fontSize: 24,
-            fontWeight: '700' as const,
-            lineHeight: 32,
+            fontSize: 28,
+            fontWeight: '800' as const,
+            letterSpacing: -0.5,
         },
         h2: {
-            fontSize: 20,
-            fontWeight: '600' as const,
-            lineHeight: 28,
+            fontSize: 22,
+            fontWeight: '700' as const,
+            letterSpacing: -0.3,
         },
         body: {
             fontSize: 16,
             fontWeight: '400' as const,
-            lineHeight: 24,
         },
         caption: {
-            fontSize: 12,
-            fontWeight: '400' as const,
-            lineHeight: 16,
+            fontSize: 13,
+            fontWeight: '500' as const,
+            color: '#6B7280',
         },
         button: {
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: '600' as const,
         }
     }

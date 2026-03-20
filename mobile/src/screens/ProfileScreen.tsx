@@ -10,9 +10,19 @@ import {
     Alert,
     Dimensions
 } from 'react-native';
+import { 
+    User, 
+    Card, 
+    Location, 
+    Notification, 
+    ShieldSecurity, 
+    MessageQuestion,
+    Logout,
+    Camera,
+    ArrowRight2
+} from 'iconsax-react-native';
 import { useAppDispatch, useAppSelector } from '../hooks/store';
 import { logout } from '../store/authSlice';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 const { width } = Dimensions.get('window');
@@ -40,12 +50,12 @@ const ProfileScreen = () => {
     };
 
     const MENU_ITEMS = [
-        { id: '1', title: 'Informations Personnelles', icon: 'account-outline', color: '#F0FDF4' },
-        { id: '2', title: 'Modes de Paiement', icon: 'credit-card-outline', color: '#FFFBEB' },
-        { id: '3', title: 'Mes Adresses', icon: 'map-marker-outline', color: '#F5F3FF' },
-        { id: '4', title: 'Notifications', icon: 'bell-outline', color: '#FEF2F2' },
-        { id: '5', title: 'Sécurité & Confidentialité', icon: 'shield-lock-outline', color: '#F0FDFA' },
-        { id: '6', title: 'Aide & Support', icon: 'help-circle-outline', color: '#FDF2F2' },
+        { id: '1', title: 'Informations Personnelles', icon: User, color: '#F9FAFB' },
+        { id: '2', title: 'Modes de Paiement', icon: Card, color: '#F9FAFB' },
+        { id: '3', title: 'Mes Adresses', icon: Location, color: '#F9FAFB' },
+        { id: '4', title: 'Notifications', icon: Notification, color: '#F9FAFB' },
+        { id: '5', title: 'Sécurité & Confidentialité', icon: ShieldSecurity, color: '#F9FAFB' },
+        { id: '6', title: 'Aide & Support', icon: MessageQuestion, color: '#F9FAFB' },
     ];
 
     const totalSpent = bookings.reduce((acc, curr) => acc + curr.totalPrice, 0);
@@ -53,7 +63,7 @@ const ProfileScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header Profile */}
+                {/* Header Profile - Flat */}
                 <View style={styles.header}>
                     <View style={styles.profileImageContainer}>
                         <Image
@@ -61,26 +71,26 @@ const ProfileScreen = () => {
                             style={styles.profileImage}
                         />
                         <TouchableOpacity style={styles.editBtn}>
-                            <MaterialCommunityIcons name="camera" size={16} color="#fff" />
+                            <Camera size={18} color="#FFFFFF" variant="Outline" />
                         </TouchableOpacity>
                     </View>
                     <Text style={styles.userName}>{user?.firstName} {user?.lastName}</Text>
                     <Text style={styles.userEmail}>{user?.email}</Text>
                 </View>
 
-                {/* Stats Card */}
-                <View style={styles.statsCard}>
-                    <View style={styles.statItem}>
+                {/* Stats Section - Minimalist horizontal list */}
+                <View style={styles.statsRow}>
+                    <View style={styles.statBox}>
                         <Text style={styles.statValue}>{bookings.length}</Text>
                         <Text style={styles.statLabel}>Missions</Text>
                     </View>
                     <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{totalSpent} Dhs</Text>
-                        <Text style={styles.statLabel}>Total Payé</Text>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>{totalSpent}</Text>
+                        <Text style={styles.statLabel}>Dhs Payés</Text>
                     </View>
                     <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
+                    <View style={styles.statBox}>
                         <Text style={styles.statValue}>VIP</Text>
                         <Text style={styles.statLabel}>Statut</Text>
                     </View>
@@ -88,8 +98,8 @@ const ProfileScreen = () => {
 
                 {/* Menu Section */}
                 <View style={styles.menuSection}>
-                    <Text style={styles.sectionTitle}>Paramètres du compte</Text>
-                    <View style={styles.menuContainer}>
+                    <Text style={styles.sectionTitle}>Paramètres</Text>
+                    <View style={styles.menuList}>
                         {MENU_ITEMS.map((item, index) => (
                             <TouchableOpacity 
                                 key={item.id} 
@@ -98,25 +108,25 @@ const ProfileScreen = () => {
                                     index === MENU_ITEMS.length - 1 && { borderBottomWidth: 0 }
                                 ]}
                             >
-                                <View style={[styles.menuIconBg, { backgroundColor: item.color }]}>
-                                    <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.primary} />
+                                <View style={styles.menuIconBox}>
+                                    <item.icon size={22} color={theme.colors.text.primary} variant="Outline" />
                                 </View>
                                 <Text style={styles.menuText}>{item.title}</Text>
-                                <MaterialCommunityIcons name="chevron-right" size={20} color="#CBD5E1" />
+                                <ArrowRight2 size={16} color={theme.colors.borderMedium} variant="Outline" />
                             </TouchableOpacity>
                         ))}
                     </View>
                 </View>
 
-                {/* Logout Button */}
+                {/* Logout Button - Minimalist ghost style */}
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                    <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
+                    <Logout size={22} color="#EF4444" variant="Outline" />
                     <Text style={styles.logoutText}>Se déconnecter</Text>
                 </TouchableOpacity>
 
-                <View style={styles.footerInfo}>
-                    <Text style={styles.versionText}>EliteForce Mobile v1.0.4</Text>
-                    <Text style={styles.copyrightText}>© 2026 EliteForce Security Group</Text>
+                <View style={styles.footer}>
+                    <Text style={styles.version}>EliteForce v1.0.4</Text>
+                    <Text style={styles.copyright}>© 2026 EliteForce Security</Text>
                 </View>
 
                 <View style={{ height: 100 }} />
@@ -128,85 +138,80 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FB',
+        backgroundColor: '#FFFFFF',
     },
     header: {
         alignItems: 'center',
         paddingVertical: 40,
-        backgroundColor: '#fff',
-        borderBottomLeftRadius: 40,
-        borderBottomRightRadius: 40,
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
     },
     profileImageContainer: {
         position: 'relative',
         marginBottom: 16,
     },
     profileImage: {
-        width: 110,
-        height: 110,
-        borderRadius: 55,
-        borderWidth: 4,
-        borderColor: '#F1F5F9',
+        width: 100,
+        height: 100,
+        borderRadius: 32,
+        backgroundColor: '#F3F4F6',
     },
     editBtn: {
         position: 'absolute',
-        bottom: 2,
-        right: 2,
+        bottom: -4,
+        right: -4,
         backgroundColor: theme.colors.primary,
-        width: 34,
-        height: 34,
-        borderRadius: 17,
+        width: 36,
+        height: 36,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
-        borderColor: '#fff',
+        borderColor: '#FFFFFF',
     },
     userName: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 4,
+        color: theme.colors.text.primary,
+        letterSpacing: -0.5,
     },
     userEmail: {
         fontSize: 14,
-        color: '#64748B',
+        color: theme.colors.text.secondary,
+        marginTop: 4,
         fontWeight: '500',
     },
-    statsCard: {
+    statsRow: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         marginHorizontal: 24,
-        marginTop: -30,
+        marginTop: 24,
         borderRadius: 24,
         padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.05,
-        shadowRadius: 15,
-        elevation: 5,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
         justifyContent: 'space-around',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
     },
-    statItem: {
+    statBox: {
         alignItems: 'center',
     },
     statValue: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 4,
+        color: theme.colors.text.primary,
     },
     statLabel: {
         fontSize: 12,
-        color: '#64748B',
+        color: theme.colors.text.secondary,
+        marginTop: 4,
         fontWeight: '600',
     },
     statDivider: {
         width: 1,
         height: 30,
-        backgroundColor: '#F1F5F9',
+        backgroundColor: theme.colors.border,
     },
     menuSection: {
         paddingHorizontal: 24,
@@ -215,27 +220,29 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: theme.colors.text.primary,
         marginBottom: 16,
     },
-    menuContainer: {
-        backgroundColor: '#fff',
+    menuList: {
+        backgroundColor: '#FFFFFF',
         borderRadius: 24,
-        padding: 8,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: theme.colors.border,
+        paddingVertical: 8,
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: '#F8FAFC',
+        borderBottomColor: '#F9FAFB',
     },
-    menuIconBg: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+    menuIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#F9FAFB',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
@@ -244,7 +251,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         fontWeight: '600',
-        color: '#334155',
+        color: theme.colors.text.primary,
     },
     logoutBtn: {
         flexDirection: 'row',
@@ -252,7 +259,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginHorizontal: 24,
         marginTop: 32,
-        backgroundColor: '#FEF2F2',
         height: 60,
         borderRadius: 20,
         borderWidth: 1,
@@ -264,18 +270,18 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#EF4444',
     },
-    footerInfo: {
+    footer: {
         alignItems: 'center',
-        marginTop: 40,
+        marginTop: 48,
     },
-versionText: {
+    version: {
         fontSize: 12,
-        color: '#94A3B8',
-        fontWeight: '600',
+        color: theme.colors.text.muted,
+        fontWeight: '700',
     },
-    copyrightText: {
+    copyright: {
         fontSize: 11,
-        color: '#CBD5E1',
+        color: theme.colors.text.muted,
         marginTop: 4,
     },
 });

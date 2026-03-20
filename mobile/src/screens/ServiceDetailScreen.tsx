@@ -12,7 +12,15 @@ import {
     TextInput,
     Alert
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    ArrowLeft, 
+    Star1, 
+    Clock, 
+    ShieldTick, 
+    Money,
+    Location,
+    CalendarTick
+} from 'iconsax-react-native';
 import { theme } from '../theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { MainStackParamList } from '../types/navigation';
@@ -85,43 +93,43 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Image Section */}
+                {/* Image Section - Flat */}
                 <View style={styles.imageContainer}>
                     <Image
                         source={{ uri: (service as any).image || 'https://images.unsplash.com/photo-1582910832782-d9055ee1722e?w=800&q=80' }}
                         style={styles.serviceImage}
                     />
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                        <ArrowLeft size={24} color={theme.colors.text.primary} variant="Outline" />
                     </TouchableOpacity>
                 </View>
 
                 {/* Content */}
                 <View style={styles.content}>
                     <View style={styles.headerRow}>
-                        <View>
+                        <View style={styles.titleCol}>
                             <Text style={styles.serviceCategory}>{service.category}</Text>
                             <Text style={styles.serviceName}>{service.name}</Text>
                         </View>
                         <View style={styles.ratingBadge}>
-                            <MaterialCommunityIcons name="star" size={18} color="#FFD700" />
+                            <Star1 size={18} color="#FFD700" variant="Bold" />
                             <Text style={styles.ratingText}>{service.rating}</Text>
                         </View>
                     </View>
 
                     <View style={styles.infoGrid}>
                         <View style={styles.infoItem}>
-                            <MaterialCommunityIcons name="clock-outline" size={24} color={theme.colors.primary} />
+                            <Clock size={24} color={theme.colors.primary} variant="Outline" />
                             <Text style={styles.infoLabel}>Durée</Text>
                             <Text style={styles.infoValue}>{service.duration} min</Text>
                         </View>
                         <View style={styles.infoItem}>
-                            <MaterialCommunityIcons name="shield-check-outline" size={24} color={theme.colors.primary} />
+                            <ShieldTick size={24} color={theme.colors.primary} variant="Outline" />
                             <Text style={styles.infoLabel}>Sécurité</Text>
                             <Text style={styles.infoValue}>EliteForce</Text>
                         </View>
                         <View style={styles.infoItem}>
-                            <MaterialCommunityIcons name="currency-usd" size={24} color={theme.colors.primary} />
+                            <Money size={24} color={theme.colors.primary} variant="Outline" />
                             <Text style={styles.infoLabel}>Prix</Text>
                             <Text style={styles.infoValue}>{service.basePrice} Dhs</Text>
                         </View>
@@ -129,34 +137,36 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
                     <Text style={styles.sectionTitle}>À propos du service</Text>
                     <Text style={styles.description}>
-                        {service.description} EliteForce garantit une protection de haut niveau avec des agents certifiés et expérimentés. Notre mission est d'assurer votre sécurité et votre tranquillité d'esprit en toutes circonstances.
+                        {service.description} EliteForce garantit une protection de haut niveau avec des agents certifiés et expérimentés.
                     </Text>
 
                     <Text style={styles.sectionTitle}>Adresse d'intervention</Text>
-                    <TextInput
-                        style={styles.addressInput}
-                        placeholder="Saisissez l'adresse de l'intervention..."
-                        placeholderTextColor={theme.colors.text.muted}
-                        value={address}
-                        onChangeText={setAddress}
-                        multiline
-                    />
+                    <View style={styles.inputWrapper}>
+                        <Location size={20} color={theme.colors.text.muted} style={styles.inputIcon} variant="Outline" />
+                        <TextInput
+                            style={styles.addressInput}
+                            placeholder="Adresse de l'intervention"
+                            placeholderTextColor={theme.colors.text.muted}
+                            value={address}
+                            onChangeText={setAddress}
+                            multiline
+                        />
+                    </View>
 
                     <Text style={styles.sectionTitle}>Date prévue</Text>
                     <View style={styles.dateBox}>
-                        <MaterialCommunityIcons name="calendar-clock" size={24} color={theme.colors.primary} />
-                        <Text style={styles.dateText}>{new Date(scheduledAt).toLocaleString()}</Text>
+                        <CalendarTick size={24} color={theme.colors.primary} variant="Outline" />
+                        <Text style={styles.dateText}>{new Date(scheduledAt).toLocaleString('fr-FR')}</Text>
                     </View>
-
                 </View>
 
                 <View style={{ height: 120 }} />
             </ScrollView>
 
-            {/* Footer */}
+            {/* Footer - Flat minimalist */}
             <View style={styles.footer}>
                 <View style={styles.priceContainer}>
-                    <Text style={styles.totalLabel}>Prix Total</Text>
+                    <Text style={styles.totalLabel}>Total</Text>
                     <Text style={styles.totalPrice}>{service.basePrice} Dhs</Text>
                 </View>
                 <TouchableOpacity
@@ -167,7 +177,7 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                     {bookingLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.bookBtnText}>Réserver</Text>
+                        <Text style={styles.bookBtnText}>Réserver maintenant</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -178,7 +188,7 @@ const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
     },
     loaderContainer: {
         flex: 1,
@@ -187,8 +197,8 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        height: 350,
-        backgroundColor: '#f5f5f5',
+        height: 380,
+        backgroundColor: '#F3F4F6',
     },
     serviceImage: {
         width: '100%',
@@ -197,26 +207,23 @@ const styles = StyleSheet.create({
     },
     backBtn: {
         position: 'absolute',
-        top: 20,
-        left: 20,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#fff',
+        top: 24,
+        left: 24,
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     content: {
         padding: 24,
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
-        marginTop: -40,
-        backgroundColor: '#fff',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        marginTop: -32,
+        backgroundColor: '#FFFFFF',
         flex: 1,
     },
     headerRow: {
@@ -225,39 +232,48 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         marginBottom: 24,
     },
+    titleCol: {
+        flex: 1,
+    },
     serviceCategory: {
-        fontSize: 14,
-        color: theme.colors.primary,
-        fontWeight: '700',
+        fontSize: 12,
+        color: theme.colors.secondary,
+        fontWeight: '800',
         textTransform: 'uppercase',
-        letterSpacing: 1,
+        letterSpacing: 1.5,
         marginBottom: 4,
     },
     serviceName: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: '800',
-        color: '#222',
+        color: theme.colors.text.primary,
+        letterSpacing: -0.5,
     },
     ratingBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFBEB',
+        backgroundColor: '#F9FAFB',
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 8,
         borderRadius: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     ratingText: {
         marginLeft: 4,
         fontWeight: '700',
-        color: '#D97706',
+        color: theme.colors.text.primary,
+        fontSize: 14,
     },
     infoGrid: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 32,
         backgroundColor: '#F9FAFB',
-        padding: 20,
+        padding: 24,
         borderRadius: 24,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     infoItem: {
         alignItems: 'center',
@@ -265,53 +281,63 @@ const styles = StyleSheet.create({
     },
     infoLabel: {
         fontSize: 12,
-        color: '#888',
+        color: theme.colors.text.secondary,
         marginTop: 8,
         marginBottom: 2,
+        fontWeight: '500',
     },
     infoValue: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#222',
+        color: theme.colors.text.primary,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        color: '#222',
-        marginBottom: 12,
+        fontWeight: '800',
+        color: theme.colors.text.primary,
+        marginBottom: 16,
         marginTop: 8,
     },
     description: {
         fontSize: 15,
-        color: '#666',
+        color: theme.colors.text.secondary,
         lineHeight: 24,
         marginBottom: 24,
     },
-    addressInput: {
+    inputWrapper: {
+        flexDirection: 'row',
         backgroundColor: '#F9FAFB',
         borderRadius: 16,
-        padding: 16,
-        height: 100,
-        textAlignVertical: 'top',
-        fontSize: 15,
-        color: '#222',
         borderWidth: 1,
-        borderColor: '#F3F4F6',
-        marginBottom: 24,
+        borderColor: theme.colors.border,
+        paddingHorizontal: 16,
+        alignItems: 'flex-start',
+        paddingVertical: 12,
+    },
+    inputIcon: {
+        marginTop: 4,
+    },
+    addressInput: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 15,
+        color: theme.colors.text.primary,
+        minHeight: 80,
+        textAlignVertical: 'top',
     },
     dateBox: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#F9FAFB',
-        padding: 16,
+        padding: 20,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#F3F4F6',
+        borderColor: theme.colors.border,
     },
     dateText: {
         marginLeft: 12,
         fontSize: 15,
-        color: '#222',
+        color: theme.colors.text.primary,
         fontWeight: '600',
     },
     footer: {
@@ -319,41 +345,41 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         padding: 24,
-        paddingBottom: 34,
+        paddingBottom: 40,
         flexDirection: 'row',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
+        borderTopColor: theme.colors.border,
     },
     priceContainer: {
         flex: 1,
     },
     totalLabel: {
         fontSize: 14,
-        color: '#888',
+        color: theme.colors.text.secondary,
         marginBottom: 2,
     },
     totalPrice: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '800',
-        color: theme.colors.primary,
+        color: theme.colors.text.primary,
     },
     bookBtn: {
         backgroundColor: theme.colors.primary,
         paddingHorizontal: 32,
-        height: 56,
-        borderRadius: 16,
+        height: 60,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        flex: 1.2,
+        flex: 1.5,
     },
     btnDisabled: {
-        opacity: 0.7,
+        opacity: 0.6,
     },
     bookBtnText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '700',
     },

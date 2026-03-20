@@ -11,7 +11,14 @@ import {
     ActivityIndicator,
     SafeAreaView
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { 
+    SearchNormal1, 
+    ArrowLeft, 
+    Setting4, 
+    Star1, 
+    AddSquare,
+    CloseCircle
+} from 'iconsax-react-native';
 import { theme } from '../theme';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -61,50 +68,46 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text.primary} />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                    <ArrowLeft size={24} color={theme.colors.text.primary} variant="Outline" />
                 </TouchableOpacity>
                 <View style={styles.searchBar}>
-                    <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.text.muted} />
+                    <SearchNormal1 size={20} color={theme.colors.text.muted} variant="Outline" />
                     <TextInput
-                        placeholder="Rechercher un service..."
+                        placeholder="Rechercher..."
                         style={styles.searchInput}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         placeholderTextColor={theme.colors.text.muted}
                     />
                 </View>
-                <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={styles.filterToggleBtn}>
-                    <MaterialCommunityIcons name="tune" size={24} color={showFilters ? theme.colors.primary : theme.colors.text.primary} />
+                <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={[styles.iconBtn, showFilters && styles.iconBtnActive]}>
+                    <Setting4 size={24} color={showFilters ? '#FFF' : theme.colors.text.primary} variant="Outline" />
                 </TouchableOpacity>
             </View>
 
             {showFilters && (
-                <View style={styles.advancedFiltersContainer}>
-                    {/* Price Slider */}
+                <View style={styles.filtersPanel}>
                     <View style={styles.filterSection}>
-                        <View style={styles.filterHeader}>
-                            <Text style={styles.filterLabel}>Prix Max: $ {priceRange}</Text>
-                        </View>
+                        <Text style={styles.filterTitle}>Prix Maximum: {priceRange} Dhs</Text>
                         <Slider
                             style={{ width: '100%', height: 40 }}
                             minimumValue={0}
-                            maximumValue={2000}
-                            step={10}
+                            maximumValue={5000}
+                            step={100}
                             value={priceRange}
                             onSlidingComplete={(value: number) => {
                                 setPriceRange(value);
                                 dispatch(setServicesFilters({ maxPrice: value }));
                             }}
                             minimumTrackTintColor={theme.colors.primary}
-                            maximumTrackTintColor="#000000"
+                            maximumTrackTintColor={theme.colors.border}
                             thumbTintColor={theme.colors.primary}
                         />
                     </View>
 
-                    {/* Rating Stars */}
                     <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>Note Minimum</Text>
+                        <Text style={styles.filterTitle}>Note Minimum</Text>
                         <View style={styles.starsRow}>
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <TouchableOpacity
@@ -114,30 +117,26 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                                         setRating(newRating);
                                         dispatch(setServicesFilters({ rating: newRating }));
                                     }}
+                                    style={styles.starTouch}
                                 >
-                                    <MaterialCommunityIcons
-                                        name={star <= rating ? "star" : "star-outline"}
-                                        size={32}
-                                        color="#FFD700"
+                                    <Star1
+                                        size={28}
+                                        color={star <= rating ? "#FFD700" : theme.colors.borderMedium}
+                                        variant={star <= rating ? "Bold" : "Outline"}
                                     />
                                 </TouchableOpacity>
                             ))}
-                            {rating > 0 && (
-                                <TouchableOpacity onPress={() => { setRating(0); dispatch(setServicesFilters({ rating: 0 })); }} style={styles.clearRatingBtn}>
-                                    <Text style={styles.clearRatingText}>Clear</Text>
-                                </TouchableOpacity>
-                            )}
                         </View>
                     </View>
                 </View>
             )}
 
-            <View style={styles.categoriesContainer}>
+            <View style={styles.categoryContainer}>
                 <FlatList
                     data={CATEGORIES}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categoriesList}
+                    contentContainerStyle={styles.categoryList}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={[
@@ -158,7 +157,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             {loading && !refreshing ? (
-                <View style={styles.loaderContainer}>
+                <View style={styles.loader}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             ) : (
@@ -179,27 +178,27 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
                                 style={styles.resultImage}
                             />
                             <View style={styles.resultInfo}>
-                                <View style={styles.categoryRow}>
+                                <View style={styles.resultHeader}>
                                     <Text style={styles.resultCategory}>{item.category}</Text>
-                                    <View style={styles.ratingRow}>
-                                        <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
+                                    <View style={styles.ratingBox}>
+                                        <Star1 size={12} color="#FFD700" variant="Bold" />
                                         <Text style={styles.ratingText}>{item.rating}</Text>
                                     </View>
                                 </View>
                                 <Text style={styles.resultName}>{item.name}</Text>
-                                <View style={styles.priceRow}>
-                                    <Text style={styles.resultPrice}>$ {item.basePrice}</Text>
-                                    <TouchableOpacity style={styles.addBtn}>
-                                        <MaterialCommunityIcons name="plus" size={20} color="#fff" />
-                                    </TouchableOpacity>
+                                <View style={styles.resultFooter}>
+                                    <Text style={styles.resultPrice}>{item.basePrice} Dhs</Text>
+                                    <View style={styles.addBtn}>
+                                        <AddSquare size={24} color={theme.colors.primary} variant="Outline" />
+                                    </View>
                                 </View>
                             </View>
                         </TouchableOpacity>
                     )}
                     ListEmptyComponent={() => (
-                        <View style={styles.emptyContainer}>
-                            <MaterialCommunityIcons name="magnify-close" size={60} color={theme.colors.text.muted} />
-                            <Text style={styles.emptyText}>Aucun service trouvé</Text>
+                        <View style={styles.emptyState}>
+                            <CloseCircle size={60} color={theme.colors.borderMedium} variant="Outline" />
+                            <Text style={styles.emptyText}>Aucun résultat trouvé</Text>
                         </View>
                     )}
                 />
@@ -211,101 +210,76 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: '#fff',
+        paddingHorizontal: 24,
+        paddingVertical: 16,
     },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
+    iconBtn: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
         borderWidth: 1,
         borderColor: theme.colors.border,
+    },
+    iconBtnActive: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
     },
     searchBar: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FAFAFA',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        height: 48,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-    filterToggleBtn: {
-        width: 48,
-        height: 48,
-        marginLeft: 12,
-        borderRadius: 12,
         backgroundColor: '#F9FAFB',
-        justifyContent: 'center',
-        alignItems: 'center',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        height: 48,
+        marginHorizontal: 12,
         borderWidth: 1,
         borderColor: theme.colors.border,
     },
-    advancedFiltersContainer: {
-        backgroundColor: '#fff',
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.md,
+    searchInput: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 14,
+        color: theme.colors.text.primary,
+    },
+    filtersPanel: {
+        paddingHorizontal: 24,
+        paddingBottom: 24,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
     },
     filterSection: {
-        marginTop: 12,
+        marginTop: 16,
     },
-    filterHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    filterLabel: {
+    filterTitle: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
         color: theme.colors.text.primary,
         marginBottom: 8,
     },
     starsRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
     },
-    clearRatingBtn: {
-        marginLeft: 16,
-        padding: 4,
+    starTouch: {
+        marginRight: 12,
     },
-    clearRatingText: {
-        fontSize: 12,
-        color: theme.colors.text.muted,
-        textDecorationLine: 'underline',
+    categoryContainer: {
+        paddingVertical: 16,
     },
-    searchInput: {
-        flex: 1,
-        marginLeft: 8,
-        fontSize: 14,
-        color: theme.colors.text.primary,
-    },
-    categoriesContainer: {
-        backgroundColor: '#fff',
-        paddingBottom: theme.spacing.md,
-    },
-    categoriesList: {
-        paddingHorizontal: theme.spacing.lg,
+    categoryList: {
+        paddingHorizontal: 24,
     },
     categoryChip: {
         paddingHorizontal: 20,
         paddingVertical: 10,
-        borderRadius: 20,
+        borderRadius: 12,
         backgroundColor: '#F9FAFB',
         marginRight: 10,
         borderWidth: 1,
@@ -321,15 +295,15 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
     },
     categoryTextSelected: {
-        color: '#fff',
+        color: '#FFFFFF',
     },
     resultsList: {
-        padding: theme.spacing.lg,
+        paddingHorizontal: 24,
     },
     resultCard: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderRadius: theme.borderRadius.lg,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: 12,
         marginBottom: 16,
         borderWidth: 1,
@@ -339,71 +313,75 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 16,
+        backgroundColor: '#F3F4F6',
     },
     resultInfo: {
         flex: 1,
         marginLeft: 16,
         justifyContent: 'center',
     },
-    categoryRow: {
+    resultHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
     },
     resultCategory: {
-        fontSize: 11,
-        color: theme.colors.text.muted,
+        fontSize: 10,
+        fontWeight: '800',
+        color: theme.colors.secondary,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
     },
-    ratingRow: {
+    ratingBox: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
     },
     ratingText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
         color: theme.colors.text.primary,
-        marginLeft: 4,
+        marginLeft: 3,
     },
     resultName: {
         fontSize: 16,
         fontWeight: '700',
         color: theme.colors.text.primary,
-        marginBottom: 8,
+        marginVertical: 4,
     },
-    priceRow: {
+    resultFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: 4,
     },
     resultPrice: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: theme.colors.primary,
+        fontSize: 15,
+        fontWeight: '800',
+        color: theme.colors.text.primary,
     },
     addBtn: {
-        backgroundColor: theme.colors.primary,
         width: 32,
         height: 32,
-        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    emptyContainer: {
+    loader: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyState: {
         alignItems: 'center',
         marginTop: 100,
     },
     emptyText: {
-        fontSize: 16,
+        fontSize: 15,
         color: theme.colors.text.muted,
         marginTop: 16,
-    },
-    loaderContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        fontWeight: '500',
     },
 });
 
