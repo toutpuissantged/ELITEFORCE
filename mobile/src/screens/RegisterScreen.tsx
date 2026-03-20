@@ -64,7 +64,17 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 if (!emailRegex.test(value)) error = 'Email invalide';
                 break;
             case 'phone': if (!value) error = 'Téléphone requis'; break;
-            case 'password': if (!value) error = 'Mot de passe requis'; break;
+            case 'password':
+                if (!value) {
+                    error = 'Mot de passe requis';
+                } else if (value.length < 8) {
+                    error = 'Minimum 8 caractères';
+                } else if (!/[A-Z]/.test(value)) {
+                    error = 'Au moins une majuscule';
+                } else if (!/[0-9]/.test(value)) {
+                    error = 'Au moins un chiffre';
+                }
+                break;
             case 'confirmPassword': if (value !== formData.password) error = 'Les mots de passe ne correspondent pas'; break;
         }
         setValidationErrors(prev => ({ ...prev, [name]: error }));
@@ -206,9 +216,9 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         {validationErrors.cgu && <Text style={[styles.errorText, { marginBottom: 16 }]}>{validationErrors.cgu}</Text>}
 
                         <TouchableOpacity
-                            style={[styles.registerBtn, (!agreeCGU || loading) && styles.registerBtnDisabled]}
+                            style={[styles.registerBtn, (!agreeCGU || loading || Object.values(validationErrors).some(e => !!e)) && styles.registerBtnDisabled]}
                             onPress={handleRegister}
-                            disabled={!agreeCGU || loading}
+                            disabled={!agreeCGU || loading || Object.values(validationErrors).some(e => !!e)}
                         >
                             {loading ? (
                                 <ActivityIndicator color="#fff" />

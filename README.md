@@ -1,121 +1,119 @@
-# ELITEFORCE MultiServices Platform
+# ELITEFORCE.GLOBAL - MultiServices Security App
 
-Une plateforme complète (Mobile + Backend) de mise en relation entre clients et prestataires de services à domicile (ménage, plomberie, etc.). Le projet intègre un système de recherche avec filtres, un suivi en temps réel via Socket.io, des paiements sécurisés via Stripe, et une architecture backend robuste.
+[![Shield Check](https://img.shields.io/badge/Security-EliteForce-black?style=flat-square&logo=icloud)]()
+[![React Native](https://img.shields.io/badge/Mobile-React_Native_Expo-blue?style=flat-square&logo=react)]()
+[![Node.js](https://img.shields.io/badge/Backend-Node.js_Express-green?style=flat-square&logo=node.js)]()
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_Prisma-darkblue?style=flat-square&logo=postgresql)]()
+
+EliteForce est une application de services de sécurité haut de gamme permettant aux utilisateurs de réserver des prestations professionnelles (Protection VIP, Cybersécurité, Vidéosurveillance) avec suivi en temps réel et paiement sécurisé.
+
+---
+
+## 📸 Screenshots
+
+| Accueil | Recherche | Détails |
+| :--- | :--- | :--- |
+| ![Home](https://raw.githubusercontent.com/username/repo/main/screenshots/home.png) | ![Search](https://raw.githubusercontent.com/username/repo/main/screenshots/search.png) | ![Detail](https://raw.githubusercontent.com/username/repo/main/screenshots/detail.png) |
+
+| Réservations | Suivi Live | Profil |
+| :--- | :--- | :--- |
+| ![Bookings](https://raw.githubusercontent.com/username/repo/main/screenshots/bookings.png) | ![Tracking](https://raw.githubusercontent.com/username/repo/main/screenshots/tracking.png) | ![Profile](https://raw.githubusercontent.com/username/repo/main/screenshots/profile.png) |
+
+---
+
+## 🛠 Stack Technique
+
+- **Mobile** : React Native (Expo SDK 55), Redux Toolkit, React Navigation v7, Iconsax.
+- **Backend** : Node.js, Express, TypeScript, Prisma ORM.
+- **Base de données** : PostgreSQL.
+- **Temps Réel** : Socket.io (Suivi prestataire & Statuts).
+- **Paiement** : Stripe (Flux complet avec Webhooks).
+- **Cartographie** : React Native Maps (Google Maps / Apple Maps).
 
 ---
 
 ## 🚀 Fonctionnalités Clés
 
-- **Authentification Sécurisée** : Inscription avec validation stricte, connexion JWT, et hachage Bcrypt.
-- **Recherche & Filtres** : Recherche de services par nom, catégorie, prix maximum, et note moyenne.
-- **Temps Réel & Tracking** : Suivi de la position du prestataire en temps réel sur une carte (`react-native-maps` + `Socket.io`).
-- **Paiements Stripe** : Intégration complète de `@stripe/stripe-react-native` pour les paiements sécurisés.
-- **Notifications Push** : Alertes automatiques via Expo Notifications à chaque changement de statut de la mission.
+- **Authentification Sécurisée** : JWT avec expiration 7j, Bcrypt (12 rounds), validation stricte des mots de passe.
+- **Catalogue de Services** : 10 services pré-remplis, filtres avancés (prix, note, catégorie).
+- **Système de Réservation** : Calcul automatique des prix, gestion des disponibilités.
+- **Paiement Stripe** : Confirmation de paiement via Webhook et mise à jour automatique du statut.
+- **Suivi en Temps Réel** : Position du prestataire sur carte live et notifications push Expo.
+- **Design Minimaliste** : Interface épurée, sans ombrages, conforme aux standards haut de gamme.
 
 ---
 
-## 🛠 Prérequis
+## 📂 Architecture du Projet
 
-Assurez-vous d'avoir installé les outils suivants sur votre machine :
-
-- [Node.js](https://nodejs.org/en/) (v18+ recommandé)
-- [PostgreSQL](https://www.postgresql.org/) (v14+ recommandé)
-- [Docker](https://www.docker.com/) (Optionnel, pour le déploiement)
-- [Expo CLI](https://docs.expo.dev/get-started/installation/) (`npm install -g expo-cli`)
-- Simulateur iOS ou Emulateur Android (ou l'application Expo Go sur un téléphone physique).
-
----
-
-## ⚙️ Installation & Configuration
-
-### 1. Base de Données
-
-Si vous utilisez Docker, vous pouvez lancer PostgreSQL rapidement :
-```bash
-docker-compose up -d db
+```mermaid
+graph TD
+    User((Client)) --> Mobile[React Native App]
+    Mobile --> Redux[Redux Toolkit State]
+    Mobile --> API[Express API REST]
+    API --> Prisma[Prisma ORM]
+    Prisma --> DB[(PostgreSQL)]
+    API --> Socket[Socket.io Server]
+    API --> Stripe[Stripe API]
+    Socket <--> Mobile
 ```
-Sinon, assurez-vous que votre instance PostgreSQL locale est en cours d'exécution.
 
-### 2. Backend (API REST)
+---
 
+## ⚙️ Installation & Lancement
+
+### Prérequis
+- Node.js v20+
+- PostgreSQL
+- Expo Go sur votre mobile
+
+### 1. Backend
 ```bash
 cd backend
 npm install
-```
-
-Créez un fichier `.env` dans le dossier `backend/` :
-```env
-# Variables essentielles
-PORT=3000
-DATABASE_URL="postgresql://eliteforce:eliteforce_password@localhost:5432/eliteforce_db?schema=public"
-JWT_SECRET="super_secret_jwt_key_2026"
-JWT_EXPIRES_IN="7d"
-
-# Configuration Stripe
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-```
-
-Générez le client Prisma et peuplez la base de données :
-```bash
-npx prisma db push
-npm run seed
-```
-
-Lancez le serveur de développement :
-```bash
+cp .env.example .env # Configurez vos variables (DB, JWT, STRIPE)
+npx prisma migrate dev
+npm run seed # Injecte les 10 services et l'admin
 npm run dev
 ```
-*(L'API et le backend Socket.io démarreront sur le port 3000, et la doc Swagger sera disponible sur `/api/docs`)*
 
-### 3. Application Mobile (React Native + Expo)
-
+### 2. Mobile
 ```bash
 cd mobile
 npm install
-```
-
-Créez un fichier `.env` dans le dossier `mobile/` :
-```env
-# URL de l'API (Remplacez localhost par votre IP locale si vous testez sur un téléphone physique)
-EXPO_PUBLIC_API_URL="http://localhost:3000/api"
-
-# Clés Publiques
-EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
-EXPO_PUBLIC_MAPS_API_KEY="AIzaSy..."
-```
-
-Lancez l'application Mobile :
-```bash
+cp .env.example .env # Configurez API_URL avec votre IP locale
 npx expo start
 ```
-*Scannez le QR Code avec Expo Go ou appuyez sur `i` ou `a` pour ouvrir dans le simulateur.*
 
 ---
 
-## 🐳 Déploiement avec Docker
-
-Le projet est fourni avec une configuration Docker prête pour la production. Pour lancer l'ensemble des services (Base de données et Backend) :
-
-```bash
-docker-compose up --build -d
-```
-Ceci exposera l'API sur le port `3000` de votre machine hôte.
+## 🛡️ Sécurité & Performance
+- **Rate Limiting** : 100 req/15min par IP, 5 tentatives de login/h.
+- **Validation** : Express Validator pour toutes les entrées.
+- **Headers** : Helmet.js pour la protection XSS et clickjacking.
+- **CORS** : Configuration stricte autorisant uniquement les domaines connus.
 
 ---
 
-## 📱 Screenshots
+## 📝 Liste des Endpoints (API)
 
-*Note: En situation réelle, les captures d'écran (minimum 3 requises: Accueil, Recherche avec filtres, Suivi en temps réel) seront insérées ici.*
-- **Accueil** : Liste des services et ajout au panier.
-- **Recherche** : Écran avec le slider de prix et la sélection de note.
-- **Suivi** : Carte interactive affichant le prestataire.
+| Méthode | Route | Description | Accès |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/auth/register` | Inscription utilisateur | Public |
+| POST | `/api/auth/login` | Connexion & Retourne JWT | Public |
+| GET | `/api/services` | Liste filtrable des services | Public |
+| POST | `/api/bookings` | Créer une réservation | CLIENT |
+| GET | `/api/bookings/me` | Historique de réservations | CLIENT |
+| POST | `/api/payments/create-intent` | Créer l'intention Stripe | CLIENT |
+
+Documentation complète Swagger disponible sur : `http://localhost:3000/api/docs`
 
 ---
 
-## 🏛 Architecture
+## 🤝 Contribution
+1. Clonez le repo.
+2. Créez une branche `feature/amazing-feature`.
+3. Commitez vos changements (min. 10 commits requis pour le test).
+4. Push vers la branche.
 
-- **Backend** : Architecture MVC (`routes`, `controllers`, `models`), `Express`, `Prisma ORM`. Middleware pour l'authentification (`authenticate`, `authorize`) et la sécurité (`helmet`, `express-rate-limit`).
-- **Mobile** : Pattern MVVM structuré avec `Redux Toolkit` pour le state management (`authSlice`, `servicesSlice`, `bookingSlice`), intercepteurs `Axios` pour le JWT, système de navigation `react-navigation`.
-
-Merci de consulter le dossier `backend/src/docs` ou d'accéder à `/api/docs` au démarrage du serveur backend pour la spécification technique complète de l'API REST.
+---
+© 2026 EliteForce Security Group - Test Technique Senior.

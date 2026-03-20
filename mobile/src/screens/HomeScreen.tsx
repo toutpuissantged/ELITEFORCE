@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     categoryItem: {
-        width: '33.33%',
+        width: '50%',
         padding: 8,
     },
     categoryCard: {
